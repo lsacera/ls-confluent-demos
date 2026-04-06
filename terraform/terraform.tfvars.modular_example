@@ -1,0 +1,74 @@
+# ------------------------------------------------------
+# Terraform Variables - Modular Demo Configuration
+# ------------------------------------------------------
+
+# Your email for tagging resources
+email = "your-email@example.com"
+
+# Prefix for resource names (IMPORTANT: Read below before changing!)
+# This prefix is used for:
+#   - AWS resources: {prefix}-ecs-cluster, {prefix}-rds-instance, etc.
+#   - Flink table names: {prefix}_enriched_customers, {prefix}_scada_zone_stats, etc.
+#   - PostgreSQL tables created by Flink
+#
+# WARNING: If you change this from "demo", you MUST update all Flink queries:
+#   - queries/retail/*.sql: Update all "demo_*" table names
+#   - queries/scada/*.sql: Update all "demo_*" table names
+#
+# Recommendation: Keep the default unless you have specific naming requirements.
+prefix = "demo"
+
+# AWS region
+cloud_region = "us-east-1"
+
+# PostgreSQL credentials
+db_username = "postgres"
+db_password = "Admin123456!!"
+
+# Confluent Cloud API credentials
+confluent_cloud_api_key    = "YOUR_CONFLUENT_API_KEY"
+confluent_cloud_api_secret = "YOUR_CONFLUENT_API_SECRET"
+
+# ------------------------------------------------------
+# Demo Feature Flags - Choose which demos to deploy
+# ------------------------------------------------------
+
+# Retail Demo: DB Feeder + Payments App + Retail Analytics
+# Includes: order processing, payment streams, customer analytics
+enable_retail_demo = true
+
+# SCADA Demo: Energy Grid Monitoring (Placeholder - not yet implemented)
+# Will include: SCADA simulator, energy telemetry, grid analytics
+enable_scada_demo = false
+
+# ------------------------------------------------------
+# Deployment Scenarios:
+# ------------------------------------------------------
+#
+# Scenario 1: Retail Only (Default)
+#   enable_retail_demo = true
+#   enable_scada_demo  = false
+#
+# Scenario 2: SCADA Only (When implemented)
+#   enable_retail_demo = false
+#   enable_scada_demo  = true
+#
+# Scenario 3: Both Demos
+#   enable_retail_demo = true
+#   enable_scada_demo  = true
+#
+# Scenario 4: Neither (Shared infrastructure only)
+#   enable_retail_demo = false
+#   enable_scada_demo  = false
+# ------------------------------------------------------
+
+# Data warehouse integration (optional)
+data_warehouse = "none"  # Options: "none", "redshift", "snowflake"
+
+# Snowflake configuration (if data_warehouse = "snowflake")
+# snowflake_account  = "<ORGANIZATION_ID-ACCOUNT_NAME>"
+# snowflake_username = "<SNOWFLAKE_USERNAME>"
+# snowflake_password = "<SNOWFLAKE_PASSWORD>"
+
+# Stop Flink statements before destroying (set to true before terraform destroy)
+stop_flink_statements = false

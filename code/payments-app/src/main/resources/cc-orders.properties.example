@@ -1,0 +1,20 @@
+#Environment: inventory_mgmt
+#Cluster: inventory analytics
+bootstrap.servers=SASL_SSL://<KAFKA_BOOTSTRAP_SERVER>:9092
+security.protocol=SASL_SSL
+ssl.endpoint.identification.algorithm=https
+sasl.mechanism=PLAIN
+num.partitions=6
+replication.factor=3
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="<KAFKA_API_KEY>" password="<KAFKA_API_SECRET>";
+
+
+# Confluent Cloud Schema Registry
+schema.registry.url=https://<SCHEMA_REGISTRY_ENDPOINT>
+schema.registry.basic.auth.user.info=<SR_API_KEY>:<SR_API_SECRET>
+basic.auth.credentials.source=USER_INFO
+
+## Data quality rules
+#KMS Props
+rule.executors._default_.param.access.key.id=<AWS_ACCESS_KEY_ID>
+rule.executors._default_.param.secret.access.key=<AWS_SECRET_ACCESS_KEY>

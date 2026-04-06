@@ -1,0 +1,93 @@
+{
+  "type": "record",
+  "name": "ScadaAlert",
+  "namespace": "io.confluent.examples.scada",
+  "doc": "SCADA alerts for anomalies and critical events in USA energy grid",
+  "fields": [
+    {
+      "name": "alert_id",
+      "type": "string",
+      "doc": "Unique alert identifier (e.g., ALERT_20260403_001234)"
+    },
+    {
+      "name": "sensor_id",
+      "type": "string",
+      "doc": "Sensor that triggered the alert"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Alert generation timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "severity",
+      "type": {
+        "type": "enum",
+        "name": "AlertSeverity",
+        "symbols": [
+          "INFO",
+          "WARNING",
+          "CRITICAL",
+          "EMERGENCY"
+        ]
+      },
+      "doc": "Alert severity level"
+    },
+    {
+      "name": "alert_type",
+      "type": {
+        "type": "enum",
+        "name": "AlertType",
+        "symbols": [
+          "VOLTAGE_HIGH",
+          "VOLTAGE_LOW",
+          "FREQUENCY_DEVIATION",
+          "OVERLOAD",
+          "PRESSURE_DROP",
+          "TEMPERATURE_HIGH",
+          "SENSOR_OFFLINE",
+          "POWER_IMBALANCE",
+          "EQUIPMENT_FAILURE"
+        ]
+      },
+      "doc": "Type of alert condition"
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "doc": "Human-readable alert message"
+    },
+    {
+      "name": "measured_value",
+      "type": "double",
+      "doc": "The value that triggered the alert"
+    },
+    {
+      "name": "threshold_value",
+      "type": "double",
+      "doc": "The threshold that was exceeded"
+    },
+    {
+      "name": "zone_id",
+      "type": "string",
+      "doc": "Geographic zone where alert occurred"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "doc": "US State code where alert occurred"
+    },
+    {
+      "name": "resolved",
+      "type": "boolean",
+      "default": false,
+      "doc": "Whether the alert has been resolved"
+    },
+    {
+      "name": "resolved_at",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Timestamp when alert was resolved (null if still active)"
+    }
+  ]
+}
