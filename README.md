@@ -5,7 +5,7 @@ This repository contains **two independent streaming demos** showcasing real-tim
 ## 🛒 **Retail Demo** - E-commerce Analytics
 Processes sales orders in real-time for **Customer360**, **Product Sales Analysis**, and **Daily Sales Trends**. Demonstrates how retailers can leverage a Data Streaming Platform (DSP) to clean and govern data at creation time, delivering fresh trustworthy data to warehouses and lakes.
 
-> 📹 **[▶️ Watch Demo Video](assets/ls-retail-demo.mp4)** (23 MB)
+[![Watch the demo video](https://raw.githubusercontent.com/lsacera/ls-confluent-demos/main/assets/ls-retail-demo.jpg)](https://raw.githubusercontent.com/lsacera/ls-confluent-demos/main/assets/ls-retail-demo.mp4)
 
 ## ⚡ **SCADA Demo** - Energy Grid Monitoring
 Simulates a USA energy grid with real-time telemetry from 180 electrical and gas network sensors across 18 locations. Demonstrates **anomaly detection**, **grid stability monitoring**, and **predictive maintenance** using Flink SQL for critical infrastructure monitoring. Includes a real-time web dashboard for operations teams.
