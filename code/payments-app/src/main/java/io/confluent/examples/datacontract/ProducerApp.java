@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.log4j.Logger;
 
+import java.time.LocalTime;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -45,23 +46,59 @@ public class ProducerApp implements Runnable {
         }
     }
 
+    /**
+     * Calculate dynamic interval based on current hour
+     * Returns interval in milliseconds with realistic business patterns
+     */
+    private static int getDynamicInterval() {
+        Random random = new Random();
+        int hour = LocalTime.now().getHour();
+
+        // Define interval ranges based on time of day (min, max in milliseconds)
+        int minInterval, maxInterval;
+
+        if (hour >= 0 && hour < 6) {
+            // Midnight to 6am - Very slow (1-2 payments/hour)
+            minInterval = 1800000; // 30 minutes
+            maxInterval = 3600000; // 60 minutes
+        } else if (hour >= 6 && hour < 10) {
+            // Morning 6am-10am - Moderate (60-120 payments/hour)
+            minInterval = 30000;  // 30 seconds
+            maxInterval = 60000;  // 60 seconds
+        } else if (hour >= 10 && hour < 14) {
+            // Lunch peak 10am-2pm - High (180-360 payments/hour)
+            minInterval = 10000;  // 10 seconds
+            maxInterval = 20000;  // 20 seconds
+        } else if (hour >= 14 && hour < 18) {
+            // Afternoon 2pm-6pm - Moderate (90-180 payments/hour)
+            minInterval = 20000;  // 20 seconds
+            maxInterval = 40000;  // 40 seconds
+        } else if (hour >= 18 && hour < 22) {
+            // Dinner peak 6pm-10pm - High (180-360 payments/hour)
+            minInterval = 10000;  // 10 seconds
+            maxInterval = 20000;  // 20 seconds
+        } else {
+            // Night 10pm-midnight - Low (45-90 payments/hour)
+            minInterval = 40000;  // 40 seconds
+            maxInterval = 80000;  // 80 seconds
+        }
+
+        // Return random value within range for variability
+        return minInterval + random.nextInt(maxInterval - minInterval + 1);
+    }
+
     @Override
     public void run() {
         topic = "payments";
         Random random = new Random();
         try (Producer<String, Object> producer = new KafkaProducer<>(props)) {
-            int counter = 0;
-            // boolean exit = false;
             while (true) {
                 // Send the record
                 try {
                     Object sales;
 
-                    sales = SalesDataGen.getSale(counter);
+                    sales = SalesDataGen.getSale();
 
-                    if (counter == 5) {
-                        counter = 0;
-                    }
                     System.out.println("------------------------- ");
 
 		    // For Kafka clients >= 2.4, the producer defaults to the Sticky Partitioner for keyless messages.
@@ -92,11 +129,11 @@ public class ProducerApp implements Runnable {
                             }
                         }).get(); 
                         System.out.println("Duplicate sale event produced " + sales);
-                    }       
-                    
-                    counter++;
+                    }
 
-                    Thread.sleep(5000);
+                    int interval = getDynamicInterval();
+                    System.out.println("Next payment in " + (interval/1000) + " seconds (hour: " + LocalTime.now().getHour() + ")");
+                    Thread.sleep(interval);
                     } catch (Exception e) {
                         // Catch and log the serialization error but continue to next record
                         // logger.error("Serialization error in ProducerApp.run: ", e);

@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+# Don't use set -e to avoid unexpected exits on terraform output errors
+# We'll handle errors explicitly where needed
 
 # Start timer
 START_TIME=$SECONDS
@@ -83,12 +84,49 @@ read -p "Do you want to stop Flink statements first? (recommended: yes/no): " st
 
 if [ "$stop_flink" = "yes" ]; then
     echo ""
-    echo -e "${BLUE}Stopping Flink statements...${NC}"
-    terraform apply -var="stop_flink_statements=true" -auto-approve
+    echo -e "${BLUE}Planning Flink statement stop...${NC}"
     echo ""
-    echo -e "${GREEN}✓ Flink statements stopped${NC}"
-    echo ""
-    sleep 5
+
+    # Check if Flink modules exist in state before trying to stop them
+    RETAIL_FLINK_EXISTS=$(terraform state list 2>/dev/null | grep -c "module.retail_flink_queries" || echo "0")
+    SCADA_FLINK_EXISTS=$(terraform state list 2>/dev/null | grep -c "module.scada_flink_queries" || echo "0")
+
+    if [ "$RETAIL_FLINK_EXISTS" -eq "0" ] && [ "$SCADA_FLINK_EXISTS" -eq "0" ]; then
+        echo -e "${YELLOW}No Flink modules found in Terraform state. Skipping Flink statement stop.${NC}"
+        echo ""
+    else
+        # Build target list based on existing modules
+        TARGETS=""
+        if [ "$RETAIL_FLINK_EXISTS" -gt "0" ]; then
+            TARGETS="$TARGETS -target=module.retail_flink_queries"
+        fi
+        if [ "$SCADA_FLINK_EXISTS" -gt "0" ]; then
+            TARGETS="$TARGETS -target=module.scada_flink_queries"
+        fi
+
+        # Show plan first so user can review
+        echo "Running: terraform plan -var=\"stop_flink_statements=true\" $TARGETS"
+        echo ""
+        terraform plan -var="stop_flink_statements=true" $TARGETS
+
+        echo ""
+        echo -e "${YELLOW}The above plan will ONLY stop Flink statements, no resources will be destroyed.${NC}"
+        echo ""
+        read -p "Proceed with stopping Flink statements? (yes/no): " confirm_stop
+
+        if [ "$confirm_stop" = "yes" ]; then
+            terraform apply -var="stop_flink_statements=true" $TARGETS -auto-approve
+
+            echo ""
+            echo -e "${GREEN}✓ Flink statements stopped${NC}"
+            echo ""
+            sleep 5
+        else
+            echo ""
+            echo -e "${YELLOW}Skipping Flink statement stop. Proceeding to destruction confirmation...${NC}"
+            echo ""
+        fi
+    fi
 fi
 
 echo ""

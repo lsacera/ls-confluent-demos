@@ -12,7 +12,7 @@ public class SalesDataGen {
     private static final String CONF_CODE_CHAR_LIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CONF_CODE_LENGTH = 8;
 
-    private static int orderId = 2900;
+    private static int orderId = 2960;  // 40 orders behind DBFeeder (3000) for quick matching
 
     static int getRandomNumber(int max)
     {
@@ -64,9 +64,11 @@ public class SalesDataGen {
         return expirationDate.format(formatter);
     }
 
-    public static Sale getSale(int fail) {
+    public static Sale getSale() {
 
         Sale order = new Sale();
+        Random random = new Random();
+
         order.setOrderId(orderId++);
         order.setProductId(getRandomNumber(100));
         order.setCustomerId(getRandomNumber(50));
@@ -75,13 +77,15 @@ public class SalesDataGen {
         order.setExpiration(generateFakeExpirationDate());
         order.setAmount((new Random().nextDouble())*1000);
 
-        if (fail == 5) {
+        // 12% failure rate - generate invalid confirmation code
+        if (random.nextInt(100) < 12) {
             order.setConfirmationCode("0");
+            System.out.println("⚠️  Generated failed payment (invalid confirmation code)");
         } else {
             order.setConfirmationCode(generateConfirmationCode());
         }
 
-        
+
 
         return order;
     }

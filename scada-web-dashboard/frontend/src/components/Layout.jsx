@@ -22,12 +22,12 @@ const Layout = ({ children }) => {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-3">
-                <img src="/confluentlogo.png" alt="Confluent" className="h-7" />
+            <div className="flex items-center space-x-4">
+              <img src="/logo-cnfl-ibm.jpg" alt="Confluent + IBM" className="h-14" />
+              <div>
                 <h1 className="text-xl font-bold text-gray-900">SCADA Streaming Analytics</h1>
+                <p className="text-sm text-gray-500">Real-time grid monitoring powered by Confluent</p>
               </div>
-              <p className="text-sm text-gray-500">Real-time grid monitoring powered by Confluent</p>
             </div>
             <div className="flex items-center space-x-4">
               {/* Auto-refresh toggle */}

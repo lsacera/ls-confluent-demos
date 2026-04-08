@@ -262,5 +262,13 @@ echo ""
 echo -e "${GREEN}🎉 Retail demo is ready to use!${NC}"
 echo ""
 
+# Display Dashboard URL prominently at the end
+if [ ! -z "$DASHBOARD_IP" ] && [ "$DASHBOARD_IP" != "None" ]; then
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}📊 Dashboard URL: ${BLUE}http://$DASHBOARD_IP${NC}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+fi
+
 # Clean up plan file
 rm -f tfplan

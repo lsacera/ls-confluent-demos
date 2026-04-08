@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class DataFeeder {
 
@@ -14,7 +15,46 @@ public class DataFeeder {
     private static final int PRODUCT_ID_MIN = 1;
     private static final int PRODUCT_ID_MAX = 290;
 
-    public static final int  INGESTION_INTERVAL = 5000;
+    /**
+     * Calculate dynamic ingestion interval based on current hour
+     * Returns interval in milliseconds with realistic business patterns
+     */
+    private static int getDynamicIngestionInterval() {
+        Random random = new Random();
+        int hour = LocalTime.now().getHour();
+
+        // Define interval ranges based on time of day (min, max in milliseconds)
+        int minInterval, maxInterval;
+
+        if (hour >= 0 && hour < 6) {
+            // Midnight to 6am - Very slow (1-2 orders/hour)
+            minInterval = 1800000; // 30 minutes
+            maxInterval = 3600000; // 60 minutes
+        } else if (hour >= 6 && hour < 10) {
+            // Morning 6am-10am - Moderate (60-120 orders/hour)
+            minInterval = 30000;  // 30 seconds
+            maxInterval = 60000;  // 60 seconds
+        } else if (hour >= 10 && hour < 14) {
+            // Lunch peak 10am-2pm - High (180-360 orders/hour)
+            minInterval = 10000;  // 10 seconds
+            maxInterval = 20000;  // 20 seconds
+        } else if (hour >= 14 && hour < 18) {
+            // Afternoon 2pm-6pm - Moderate (90-180 orders/hour)
+            minInterval = 20000;  // 20 seconds
+            maxInterval = 40000;  // 40 seconds
+        } else if (hour >= 18 && hour < 22) {
+            // Dinner peak 6pm-10pm - High (180-360 orders/hour)
+            minInterval = 10000;  // 10 seconds
+            maxInterval = 20000;  // 20 seconds
+        } else {
+            // Night 10pm-midnight - Low (45-90 orders/hour)
+            minInterval = 40000;  // 40 seconds
+            maxInterval = 80000;  // 80 seconds
+        }
+
+        // Return random value within range for variability
+        return minInterval + random.nextInt(maxInterval - minInterval + 1);
+    }
 
 
     public static void main(String[] args) {
@@ -62,7 +102,7 @@ public class DataFeeder {
         String insertOrderSQL = "INSERT INTO orders (OrderID, CustomerID, OrderDate, Status) VALUES (?, ?, ?, ?)";
         String insertOrderItemSQL = "INSERT INTO order_items (OrderItemID, OrderID, ProductID, Quantity) VALUES (?, ?, ?, ?)";
         Random random = new Random();
-        int orderID = 3000;
+        int orderID = 3000;  // Original value - 40 orders ahead of PaymentsApp (2960)
         int orderItemID = 9000;
 
         while (true) {
@@ -99,7 +139,9 @@ public class DataFeeder {
             orderID++; // Increment orderID for the next order
 
             try {
-                Thread.sleep(INGESTION_INTERVAL);
+                int interval = getDynamicIngestionInterval();
+                System.out.println("Next order in " + (interval/1000) + " seconds (hour: " + LocalTime.now().getHour() + ")");
+                Thread.sleep(interval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 // Handle the exception, if necessary

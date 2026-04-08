@@ -30,6 +30,10 @@ const LineChart = ({ data, xKey, yKey, title, loading = false }) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Calculate max value from data to set Y axis domain
+  const maxValue = Math.max(...data.map(item => item[yKey] || 0));
+  const yAxisMax = Math.ceil(maxValue * 1.15); // Add 15% padding
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
@@ -43,6 +47,7 @@ const LineChart = ({ data, xKey, yKey, title, loading = false }) => {
             style={{ fontSize: '12px' }}
           />
           <YAxis
+            domain={[0, yAxisMax]}
             tickFormatter={(value) => formatCurrency(value)}
             stroke="#6b7280"
             style={{ fontSize: '12px' }}
