@@ -16,7 +16,7 @@ const OverviewDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPICard
-          title="Revenue (24h)"
+          title="Revenue (12h)"
           value={kpis?.revenue}
           trend={comparison?.change_percent}
           icon={DollarSign}

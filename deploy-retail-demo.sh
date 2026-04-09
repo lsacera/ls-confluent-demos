@@ -66,23 +66,37 @@ terraform init
 echo ""
 echo -e "${BLUE}2. Planning deployment...${NC}"
 
-# Check if SCADA demo is currently enabled
-SCADA_ENABLED=$(grep -E "^\s*enable_scada_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
+# Check if SCADA demo is currently DEPLOYED (check Terraform state, not just tfvars)
+SCADA_DEPLOYED=$(terraform output -json scada_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")
 
-if [ "$SCADA_ENABLED" = "true" ]; then
+if [ "$SCADA_DEPLOYED" = "true" ]; then
     echo "   Demo stacks to deploy:"
-    echo "     ✓ Retail Demo (DB Feeder + Payments App + Dashboard)"
-    echo "     ✓ SCADA Demo (preserving existing deployment)"
+    echo "     ✓ Retail Demo (will be added)"
+    echo "     ✓ SCADA Demo (CURRENTLY DEPLOYED - will be preserved)"
     echo ""
-    echo -e "${YELLOW}ℹ️  SCADA demo is already deployed - will be preserved${NC}"
+    echo -e "${YELLOW}ℹ️  SCADA demo is currently deployed - preserving it${NC}"
+    PRESERVE_SCADA="true"
 else
-    echo "   Demo stacks to deploy:"
-    echo "     ✓ Retail Demo (DB Feeder + Payments App + Dashboard)"
-    echo ""
+    # Check tfvars to see if user wants SCADA enabled
+    SCADA_IN_TFVARS=$(grep -E "^\s*enable_scada_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
+
+    if [ "$SCADA_IN_TFVARS" = "true" ]; then
+        echo "   Demo stacks to deploy:"
+        echo "     ✓ Retail Demo (enabled)"
+        echo "     ✓ SCADA Demo (enabled in tfvars)"
+        PRESERVE_SCADA="true"
+    else
+        echo "   Demo stacks to deploy:"
+        echo "     ✓ Retail Demo (DB Feeder + Payments App + Dashboard)"
+        echo "     ✗ SCADA Demo (not deployed)"
+        PRESERVE_SCADA="false"
+    fi
 fi
 
-# Create plan with retail demo enabled (preserve SCADA if enabled)
-if [ "$SCADA_ENABLED" = "true" ]; then
+echo ""
+
+# Create plan with retail demo enabled (preserve SCADA if deployed or enabled in tfvars)
+if [ "$PRESERVE_SCADA" = "true" ]; then
     terraform plan \
         -var="enable_retail_demo=true" \
         -var="enable_scada_demo=true" \

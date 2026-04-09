@@ -18,7 +18,7 @@ router.get('/kpis', async (req, res, next) => {
         COUNT(DISTINCT orderid) as total_orders,
         COUNT(DISTINCT customerid) as active_customers
       FROM product_sales
-      WHERE orderdate >= NOW() - INTERVAL '1 DAY'
+      WHERE orderdate >= NOW() - INTERVAL '12 HOUR'
     `;
 
     const result = await executeQuery(query);
@@ -72,26 +72,26 @@ router.get('/comparison', async (req, res, next) => {
 
   try {
     const query = `
-      WITH today AS (
+      WITH current_period AS (
         SELECT SUM(total_amount) as revenue
         FROM product_sales
-        WHERE orderdate >= NOW() - INTERVAL '1 DAY'
+        WHERE orderdate >= NOW() - INTERVAL '12 HOUR'
       ),
-      yesterday AS (
+      previous_period AS (
         SELECT SUM(total_amount) as revenue
         FROM product_sales
-        WHERE orderdate >= NOW() - INTERVAL '2 DAY'
-          AND orderdate < NOW() - INTERVAL '1 DAY'
+        WHERE orderdate >= NOW() - INTERVAL '24 HOUR'
+          AND orderdate < NOW() - INTERVAL '12 HOUR'
       )
       SELECT
-        today.revenue as today_revenue,
-        yesterday.revenue as yesterday_revenue,
+        current_period.revenue as today_revenue,
+        previous_period.revenue as yesterday_revenue,
         CASE
-          WHEN yesterday.revenue > 0 THEN
-            ((today.revenue - yesterday.revenue) / yesterday.revenue) * 100
+          WHEN previous_period.revenue > 0 THEN
+            ((current_period.revenue - previous_period.revenue) / previous_period.revenue) * 100
           ELSE 0
         END as change_percent
-      FROM today, yesterday
+      FROM current_period, previous_period
     `;
 
     const result = await executeQuery(query);

@@ -10,6 +10,8 @@ Processes sales orders in real-time for **Customer360**, **Product Sales Analysi
 ## ⚡ **SCADA Demo** - Energy Grid Monitoring
 Simulates a USA energy grid with real-time telemetry from 180 electrical and gas network sensors across 18 locations. Demonstrates **anomaly detection**, **grid stability monitoring**, and **predictive maintenance** using Flink SQL for critical infrastructure monitoring. Includes a real-time web dashboard for operations teams.
 
+[![Watch the demo video](https://raw.githubusercontent.com/lsacera/ls-confluent-demos/main/assets/ls-scada-demo.jpg)](https://raw.githubusercontent.com/lsacera/ls-confluent-demos/main/assets/ls-scada-demo.mp4)
+
 Both demos can be deployed **independently** or **together**, thanks to a modular Terraform architecture with feature flags.
 
 ## What's Included

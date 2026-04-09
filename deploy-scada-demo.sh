@@ -50,25 +50,37 @@ terraform init
 echo ""
 echo -e "${BLUE}2. Planning deployment...${NC}"
 
-# Check if Retail demo is currently enabled
-RETAIL_ENABLED=$(grep -E "^\s*enable_retail_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
+# Check if Retail demo is currently DEPLOYED (check Terraform state, not just tfvars)
+RETAIL_DEPLOYED=$(terraform output -json retail_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")
 
-if [ "$RETAIL_ENABLED" = "true" ]; then
+if [ "$RETAIL_DEPLOYED" = "true" ]; then
     echo "   Demo stacks to deploy:"
-    echo "     ✓ Retail Demo (preserving existing deployment)"
-    echo "     ✓ SCADA Demo (enabled)"
+    echo "     ✓ Retail Demo (CURRENTLY DEPLOYED - will be preserved)"
+    echo "     ✓ SCADA Demo (will be added)"
     echo ""
-    echo -e "${YELLOW}ℹ️  Retail demo is already deployed - will be preserved${NC}"
+    echo -e "${YELLOW}ℹ️  Retail demo is currently deployed - preserving it${NC}"
+    PRESERVE_RETAIL="true"
 else
-    echo "   Demo stacks to deploy:"
-    echo "     ✗ Retail Demo (disabled)"
-    echo "     ✓ SCADA Demo (enabled)"
+    # Check tfvars to see if user wants retail enabled
+    RETAIL_IN_TFVARS=$(grep -E "^\s*enable_retail_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
+
+    if [ "$RETAIL_IN_TFVARS" = "true" ]; then
+        echo "   Demo stacks to deploy:"
+        echo "     ✓ Retail Demo (enabled in tfvars)"
+        echo "     ✓ SCADA Demo (enabled)"
+        PRESERVE_RETAIL="true"
+    else
+        echo "   Demo stacks to deploy:"
+        echo "     ✗ Retail Demo (not deployed)"
+        echo "     ✓ SCADA Demo (enabled)"
+        PRESERVE_RETAIL="false"
+    fi
 fi
 
 echo ""
 
-# Create plan with SCADA demo enabled (preserve Retail if enabled)
-if [ "$RETAIL_ENABLED" = "true" ]; then
+# Create plan with SCADA demo enabled (preserve Retail if deployed or enabled in tfvars)
+if [ "$PRESERVE_RETAIL" = "true" ]; then
     terraform plan \
         -var="enable_scada_demo=true" \
         -var="enable_retail_demo=true" \

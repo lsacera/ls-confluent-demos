@@ -82,7 +82,7 @@ router.get('/payment-completion', async (req, res, next) => {
         ),
         total AS (
           SELECT COUNT(DISTINCT orderid) as count
-          FROM product_sales
+          FROM orders
           WHERE orderdate >= NOW() - INTERVAL '${days} DAY'
         )
         SELECT
