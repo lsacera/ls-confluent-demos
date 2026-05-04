@@ -1,0 +1,10 @@
+email="<YOUR_EMAIL>"
+confluent_cloud_api_key = "<CONFLUENT_CLOUD_API_KEY>"
+confluent_cloud_api_secret = "<CONFLUENT_CLOUD_API_SECRET>"
+data_warehouse = "none" # Options: snowflake, redshift, or none
+
+# WARNING: If you change prefix, you MUST update ALL Flink queries in queries/*.sql
+# to match the new table names: {prefix}_enriched_customers, {prefix}_scada_zone_stats, etc.
+prefix = "<YOUR_PREFIX>" # Prefix to identify resources
+
+cloud_region = "us-east-1" # AWS region

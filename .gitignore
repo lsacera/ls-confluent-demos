@@ -1,0 +1,52 @@
+# Secrets & Credentials
+*.tfvars
+!*.tfvars.example
+*.properties
+!*.properties.example
+!**/log4j.properties
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+demo-destroy.sh
+demo-destroy.bat
+
+# Java/Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+dependency-reduced-pom.xml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# Application specific
+code/payments-app/src/main/datacontracts/avro/payments-value-dqr.json
+*my-personal-*
+*.local
+*.backup
+demo_scada_script.txt
+retail_demo_script.txt
+
+# Backup and old files
+BACKUP/

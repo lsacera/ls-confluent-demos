@@ -1,0 +1,537 @@
+resource "random_id" "env_display_id" {
+    byte_length = 4
+}
+
+# ------------------------------------------------------
+# ENVIRONMENT
+# ------------------------------------------------------
+
+resource "confluent_environment" "staging" {
+  display_name = "LS-demo"
+
+  stream_governance {
+    package = "ADVANCED"
+  }
+}
+
+# ------------------------------------------------------
+# KAFKA Cluster
+# ------------------------------------------------------
+
+data "confluent_schema_registry_cluster" "sr-cluster" {
+  environment {
+    id = confluent_environment.staging.id
+  }
+
+  depends_on = [
+    confluent_kafka_cluster.standard
+  ]
+}
+
+# Update the config to use a cloud provider and region of your choice.
+# https://registry.terraform.io/providers/confluentinc/confluent/latest/docs/resources/confluent_kafka_cluster
+resource "confluent_kafka_cluster" "standard" {
+  display_name = "LS-cluster"
+  availability = "SINGLE_ZONE"
+  cloud        = "AWS"
+  region       = var.cloud_region
+  standard {}
+  environment {
+    id = confluent_environment.staging.id
+  }
+}
+
+# ------------------------------------------------------
+# SERVICE ACCOUNTS
+# ------------------------------------------------------
+
+resource "confluent_service_account" "app-manager" {
+  display_name = "ls-sa-app-manager"
+  description  = "Service account to manage 'inventory' Kafka cluster"
+}
+
+resource "confluent_role_binding" "app-manager-kafka-cluster-admin" {
+  principal   = "User:${confluent_service_account.app-manager.id}"
+  role_name   = "EnvironmentAdmin"
+  crn_pattern = confluent_environment.staging.resource_name  
+}
+
+
+# ------------------------------------------------------
+# Flink Compute Pool
+# ------------------------------------------------------
+
+resource "confluent_flink_compute_pool" "flinkpool-main" {
+  display_name     = "LS_compute_pool"
+  cloud            = "AWS"
+  region           = var.cloud_region
+  max_cfu          = 20
+  environment {
+    id = confluent_environment.staging.id
+  }
+}
+
+# ------------------------------------------------------
+# API Keys
+# ------------------------------------------------------
+
+resource "confluent_api_key" "app-manager-kafka-api-key" {
+  display_name = "app-manager-kafka-api-key"
+  description  = "Kafka API Key that is owned by 'app-manager' service account"
+  owner {
+    id          = confluent_service_account.app-manager.id
+    api_version = confluent_service_account.app-manager.api_version
+    kind        = confluent_service_account.app-manager.kind
+  }
+
+  managed_resource {
+    id          = confluent_kafka_cluster.standard.id
+    api_version = confluent_kafka_cluster.standard.api_version
+    kind        = confluent_kafka_cluster.standard.kind
+
+    environment {
+      id = confluent_environment.staging.id
+    }
+  }
+
+  depends_on = [
+    confluent_role_binding.app-manager-kafka-cluster-admin
+  ]
+}
+
+
+resource "confluent_api_key" "app-manager-schema-registry-api-key" {
+  display_name = "env-manager-schema-registry-api-key"
+  description  = "Schema Registry API Key that is owned by 'env-manager' service account"
+  owner {
+    id          = confluent_service_account.app-manager.id
+    api_version = confluent_service_account.app-manager.api_version
+    kind        = confluent_service_account.app-manager.kind
+  }
+
+  managed_resource {
+    id          = data.confluent_schema_registry_cluster.sr-cluster.id
+    api_version = data.confluent_schema_registry_cluster.sr-cluster.api_version
+    kind        = data.confluent_schema_registry_cluster.sr-cluster.kind
+
+    environment {
+      id = confluent_environment.staging.id
+    }
+  }
+  depends_on = [
+    confluent_role_binding.app-manager-kafka-cluster-admin
+  ]
+}
+
+data "confluent_flink_region" "demo_flink_region" {
+  cloud   = "AWS"
+  region  = var.cloud_region
+}
+
+data "confluent_organization" "main" {}
+
+
+
+# Flink management API Keys
+
+resource "confluent_api_key" "app-manager-flink-api-key" {
+  display_name = "env-manager-flink-api-key"
+  description  = "Flink API Key that is owned by 'env-manager' service account"
+  owner {
+    id          = confluent_service_account.app-manager.id
+    api_version = confluent_service_account.app-manager.api_version
+    kind        = confluent_service_account.app-manager.kind
+  }
+
+  managed_resource {
+    id          = data.confluent_flink_region.demo_flink_region.id
+    api_version = data.confluent_flink_region.demo_flink_region.api_version
+    kind        = data.confluent_flink_region.demo_flink_region.kind
+
+    environment {
+      id = confluent_environment.staging.id
+    }
+  }
+}
+
+
+
+# ------------------------------------------------------
+# ACLS
+# ------------------------------------------------------
+
+resource "confluent_kafka_acl" "app-manager-read-on-topic" {
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  resource_type = "TOPIC"
+  resource_name = "*"
+  pattern_type  = "LITERAL"
+  principal     = "User:${confluent_service_account.app-manager.id}"
+  host          = "*"
+  operation     = "READ"
+  permission    = "ALLOW"
+  rest_endpoint = confluent_kafka_cluster.standard.rest_endpoint
+  credentials {
+    key    = confluent_api_key.app-manager-kafka-api-key.id
+    secret = confluent_api_key.app-manager-kafka-api-key.secret
+  }
+}
+
+resource "confluent_kafka_acl" "app-manager-describe-on-cluster" {
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  resource_type = "CLUSTER"
+  resource_name = "kafka-cluster"
+  pattern_type  = "LITERAL"
+  principal     = "User:${confluent_service_account.app-manager.id}"
+  host          = "*"
+  operation     = "DESCRIBE"
+  permission    = "ALLOW"
+  rest_endpoint = confluent_kafka_cluster.standard.rest_endpoint
+  credentials {
+    key    = confluent_api_key.app-manager-kafka-api-key.id
+    secret = confluent_api_key.app-manager-kafka-api-key.secret
+  }
+}
+
+
+resource "confluent_kafka_acl" "app-manager-write-on-topic" {
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  resource_type = "TOPIC"
+  resource_name = "*"
+  pattern_type  = "LITERAL"
+  principal     = "User:${confluent_service_account.app-manager.id}"
+  host          = "*"
+  operation     = "WRITE"
+  permission    = "ALLOW"
+  rest_endpoint = confluent_kafka_cluster.standard.rest_endpoint
+  credentials {
+    key    = confluent_api_key.app-manager-kafka-api-key.id
+    secret = confluent_api_key.app-manager-kafka-api-key.secret
+  }
+}
+
+resource "confluent_kafka_acl" "app-manager-create-topic" {
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  resource_type = "TOPIC"
+  resource_name = "*"
+  pattern_type  = "LITERAL"
+  principal     = "User:${confluent_service_account.app-manager.id}"
+  host          = "*"
+  operation     = "CREATE"
+  permission    = "ALLOW"
+  rest_endpoint = confluent_kafka_cluster.standard.rest_endpoint
+  credentials {
+    key    = confluent_api_key.app-manager-kafka-api-key.id
+    secret = confluent_api_key.app-manager-kafka-api-key.secret
+  }
+}
+
+resource "confluent_kafka_acl" "app-manager-read-on-group" {
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  resource_type = "GROUP"
+  resource_name = "*"
+  pattern_type  = "LITERAL"
+  principal     = "User:${confluent_service_account.app-manager.id}"
+  host          = "*"
+  operation     = "READ"
+  permission    = "ALLOW"
+  rest_endpoint = confluent_kafka_cluster.standard.rest_endpoint
+  credentials {
+    key    = confluent_api_key.app-manager-kafka-api-key.id
+    secret = confluent_api_key.app-manager-kafka-api-key.secret
+  }
+}
+
+# ------------------------------------------------------
+# Connectors
+# ------------------------------------------------------
+
+resource "confluent_connector" "postgre-sql-cdc-source" {
+  count = var.enable_retail_demo ? 1 : 0
+
+  environment {
+    id = confluent_environment.staging.id
+  }
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+  config_sensitive = {
+    "database.password" = var.db_password
+  }
+  config_nonsensitive = {
+    "connector.class"          = "PostgresCdcSourceV2"
+    "name"                     = "PostgresCdcSourceConnector_0"
+    "kafka.auth.mode"          = "SERVICE_ACCOUNT"
+    "kafka.service.account.id" = confluent_service_account.app-manager.id
+    "database.hostname"        = aws_db_instance.postgres_db.address
+    "database.port"            = aws_db_instance.postgres_db.port
+    "database.user"            = var.db_username
+    "database.dbname"          = aws_db_instance.postgres_db.db_name
+    "database.server.name"     = local.database_server_name
+    "topic.prefix"             = var.prefix
+    "after.state.only"         = "true"
+    "plugin.name"              = "pgoutput"
+    "output.data.format"       = "AVRO"
+    "output.key.format"        = "AVRO"
+    "tasks.max"                = "1"
+    "transforms"               = "transform_0"
+    "transforms.transform_0.type"= "org.apache.kafka.connect.transforms.MaskField$Value"
+    "transforms.transform_0.fields"= "email"
+    "transforms.transform_0.replacement"= "****"
+    "time.precision.mode" = "connect"
+    "csfle.configs.visible"    = "false"
+  }
+
+  depends_on = [
+    confluent_kafka_acl.app-manager-describe-on-cluster,
+    confluent_kafka_acl.app-manager-write-on-topic,
+    confluent_kafka_acl.app-manager-create-topic,
+    docker_container.psql_init,
+  ]
+}
+
+locals {
+  database_server_name = "sql"
+}
+
+# ------------------------------------------------------
+# Topics
+# ------------------------------------------------------
+# NOTE: Retail topics (error-payments, payments) have been moved to
+#       modules/retail_stack/main.tf and are deployed conditionally
+#       based on var.enable_retail_demo flag.
+
+# ------------------------------------------------------
+# Schemas
+# ------------------------------------------------------
+# NOTE: Retail schemas (avro-payments) have been moved to
+#       modules/retail_stack/main.tf and are deployed conditionally
+#       based on var.enable_retail_demo flag.
+
+# COMMENTED OUT - Now managed by retail_stack module
+# resource "confluent_kafka_topic" "error-payments-topic" {
+#   kafka_cluster {
+#     id = confluent_kafka_cluster.standard.id
+#   }
+#   topic_name         = "error-payments"
+#   rest_endpoint      = confluent_kafka_cluster.standard.rest_endpoint
+#   credentials {
+#     key    = confluent_api_key.app-manager-kafka-api-key.id
+#     secret = confluent_api_key.app-manager-kafka-api-key.secret
+#   }
+# }
+#
+# resource "confluent_kafka_topic" "payments-topic" {
+#   kafka_cluster {
+#     id = confluent_kafka_cluster.standard.id
+#   }
+#   topic_name         = "payments"
+#   rest_endpoint      = confluent_kafka_cluster.standard.rest_endpoint
+#   credentials {
+#     key    = confluent_api_key.app-manager-kafka-api-key.id
+#     secret = confluent_api_key.app-manager-kafka-api-key.secret
+#   }
+# }
+#
+# resource "confluent_schema" "avro-payments" {
+#   schema_registry_cluster {
+#     id = data.confluent_schema_registry_cluster.sr-cluster.id
+#   }
+#   rest_endpoint = data.confluent_schema_registry_cluster.sr-cluster.rest_endpoint
+#   subject_name = "payments-value"
+#   format = "AVRO"
+#   schema = file("./schemas/avro/payments-value.avsc")
+#   hard_delete = true
+#   credentials {
+#     key    = confluent_api_key.app-manager-schema-registry-api-key.id
+#     secret = confluent_api_key.app-manager-schema-registry-api-key.secret
+#   }
+# # Luis: al parecer hay un puto bug en Flink que hace que esto de las reglas no funcione. Para cagarse.
+#   # ruleset {
+#   #   domain_rules {
+#   #     name = "validateConfirmationCode"
+#   #     kind = "CONDITION"
+#   #     mode = "WRITEREAD"
+#   #     type = "CEL"
+#   #     expr = "message.confirmation_code.matches('^[A-Z0-9]{8}$')"
+#   #     on_failure = "DLQ"
+#   #     params = {
+#   #       "dlq.topic" = "error-payments"
+#   #       "dlq.auto.flush" = "true"
+#   #       }
+#   #   }
+#   # }
+#   depends_on = [
+#     confluent_role_binding.app-manager-kafka-cluster-admin,
+#     confluent_schema_registry_kek.aws_key
+#   ]
+# }
+
+# ------------------------------------------------------
+# CSFLE Encryption Keys
+# ------------------------------------------------------
+# NOTE: Schema Registry KEK has been moved to modules/retail_stack/main.tf
+#       It is now created conditionally when retail demo is enabled.
+
+# ------------------------------------------------------
+# Wait for CDC Connector to populate topics before Flink
+# ------------------------------------------------------
+
+resource "time_sleep" "wait_for_cdc_topics" {
+  count = var.enable_retail_demo ? 1 : 0
+
+  depends_on = [
+    confluent_connector.postgre-sql-cdc-source[0]
+  ]
+
+  create_duration = "120s"  # Wait 2 minutes for topics to be created and populated
+}
+
+# ------------------------------------------------------
+# Flink Queries Modules
+# ------------------------------------------------------
+# NOTE: Flink queries are now deployed conditionally by demo
+# See demo-stacks.tf for retail and SCADA Flink query deployments
+
+# ------------------------------------------------------
+# PostgreSQL Sink Connectors for Flink Tables
+# ------------------------------------------------------
+# Each demo has its own PostgreSQL Sink connector that writes
+# Flink query results back to the PostgreSQL database for dashboarding
+
+# Retail PostgreSQL Sink - Saves retail Flink query results
+resource "confluent_connector" "postgres-sink-retail" {
+  count = local.deploy_retail ? 1 : 0
+
+  environment {
+    id = confluent_environment.staging.id
+  }
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+
+  config_sensitive = {
+    "connection.password" = var.db_password
+  }
+
+  config_nonsensitive = {
+    "connector.class"          = "PostgresSink"
+    "name"                     = "PostgresSinkRetail"
+    "kafka.auth.mode"          = "SERVICE_ACCOUNT"
+    "kafka.service.account.id" = confluent_service_account.app-manager.id
+    "connection.host"          = aws_db_instance.postgres_db.address
+    "connection.port"          = "5432"
+    "connection.user"          = var.db_username
+    "db.name"                  = "onlinestoredb"
+    "topics"                   = "thirty_day_customer_snapshot,product_sales,completed_orders"
+    "input.data.format"        = "AVRO"
+    "input.key.format"         = "AVRO"
+    "insert.mode"              = "UPSERT"
+    "delete.enabled"           = "false"
+    "auto.create"              = "true"
+    "pk.mode"                  = "record_key"
+    "tasks.max"                = "1"
+  }
+
+  depends_on = [
+    confluent_kafka_acl.app-manager-describe-on-cluster,
+    confluent_kafka_acl.app-manager-read-on-topic,
+    confluent_kafka_acl.app-manager-read-on-group,
+    module.retail_flink_queries
+  ]
+}
+
+# SCADA PostgreSQL Sink - Saves SCADA Flink query results
+resource "confluent_connector" "postgres-sink-scada" {
+  count = local.deploy_scada ? 1 : 0
+
+  environment {
+    id = confluent_environment.staging.id
+  }
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+
+  config_sensitive = {
+    "connection.password" = var.db_password
+  }
+
+  config_nonsensitive = {
+    "connector.class"          = "PostgresSink"
+    "name"                     = "PostgresSinkSCADA"
+    "kafka.auth.mode"          = "SERVICE_ACCOUNT"
+    "kafka.service.account.id" = confluent_service_account.app-manager.id
+    "connection.host"          = aws_db_instance.postgres_db.address
+    "connection.port"          = "5432"
+    "connection.user"          = var.db_username
+    "db.name"                  = "onlinestoredb"
+    "topics"                   = "scada_anomalies,scada_zone_stats,scada_grid_region_stats,scada_sensor_health"
+    "input.data.format"        = "AVRO"
+    "input.key.format"         = "AVRO"
+    "insert.mode"              = "UPSERT"
+    "delete.enabled"           = "false"
+    "auto.create"              = "true"
+    "pk.mode"                  = "record_key"
+    "tasks.max"                = "1"
+  }
+
+  depends_on = [
+    confluent_kafka_acl.app-manager-describe-on-cluster,
+    confluent_kafka_acl.app-manager-read-on-topic,
+    confluent_kafka_acl.app-manager-read-on-group,
+    module.scada_flink_queries
+  ]
+}
+
+# Smart City PostgreSQL Sink - Saves Smart City Flink query results
+resource "confluent_connector" "postgres-sink-smartcity" {
+  count = local.deploy_smartcity ? 1 : 0
+
+  environment {
+    id = confluent_environment.staging.id
+  }
+  kafka_cluster {
+    id = confluent_kafka_cluster.standard.id
+  }
+
+  config_sensitive = {
+    "connection.password" = var.db_password
+  }
+
+  config_nonsensitive = {
+    "connector.class"          = "PostgresSink"
+    "name"                     = "PostgresSinkSmartCity"
+    "kafka.auth.mode"          = "SERVICE_ACCOUNT"
+    "kafka.service.account.id" = confluent_service_account.app-manager.id
+    "connection.host"          = aws_db_instance.postgres_db.address
+    "connection.port"          = "5432"
+    "connection.user"          = var.db_username
+    "db.name"                  = "onlinestoredb"
+    "topics"                   = "smartcity_traffic_stream,smartcity_airquality_stream,smartcity_traffic_alerts,smartcity_district_stats,smartcity_emt_performance,smartcity_services_sla,smartcity_health_dashboard"
+    "input.data.format"        = "AVRO"
+    "input.key.format"         = "AVRO"
+    "insert.mode"              = "UPSERT"
+    "delete.enabled"           = "false"
+    "auto.create"              = "true"
+    "pk.mode"                  = "record_key"
+    "tasks.max"                = "1"
+  }
+
+  depends_on = [
+    confluent_kafka_acl.app-manager-describe-on-cluster,
+    confluent_kafka_acl.app-manager-read-on-topic,
+    confluent_kafka_acl.app-manager-read-on-group,
+    module.smartcity_flink_queries
+  ]
+}
+
+

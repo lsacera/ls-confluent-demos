@@ -1,0 +1,109 @@
+{
+  "type": "record",
+  "name": "TrafficSensor",
+  "namespace": "io.confluent.examples.smartcity",
+  "doc": "Traffic sensor data for Smart City Madrid urban monitoring",
+  "fields": [
+    {
+      "name": "sensor_id",
+      "type": "string",
+      "doc": "Unique identifier for the traffic sensor (e.g., TRAF-M30-001)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Timestamp of the reading in milliseconds since epoch"
+    },
+    {
+      "name": "district",
+      "type": {
+        "type": "enum",
+        "name": "MadridDistrict",
+        "symbols": [
+          "Centro",
+          "Arganzuela",
+          "Retiro",
+          "Salamanca",
+          "Chamartin",
+          "Tetuan",
+          "Chamberi",
+          "Fuencarral_El_Pardo",
+          "Moncloa_Aravaca",
+          "Latina",
+          "Carabanchel",
+          "Usera",
+          "Puente_de_Vallecas",
+          "Moratalaz",
+          "Ciudad_Lineal",
+          "Hortaleza",
+          "Villaverde",
+          "Villa_de_Vallecas",
+          "Vicalvaro",
+          "San_Blas_Canillejas",
+          "Barajas"
+        ]
+      },
+      "doc": "Madrid district where the sensor is located"
+    },
+    {
+      "name": "location_name",
+      "type": "string",
+      "doc": "Human-readable location name (e.g., M-30 Norte - Salida 5, Gran Via - Callao)"
+    },
+    {
+      "name": "location_type",
+      "type": {
+        "type": "enum",
+        "name": "LocationType",
+        "symbols": [
+          "M30",
+          "MAIN_AVENUE",
+          "HIGHWAY_ACCESS",
+          "INTERSECTION",
+          "DOWNTOWN"
+        ]
+      },
+      "doc": "Type of road/location being monitored"
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Sensor latitude coordinate (Madrid range: ~40.3 to ~40.5)"
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Sensor longitude coordinate (Madrid range: ~-3.9 to ~-3.5)"
+    },
+    {
+      "name": "vehicle_count",
+      "type": "int",
+      "doc": "Number of vehicles detected in the last hour"
+    },
+    {
+      "name": "avg_speed",
+      "type": "double",
+      "doc": "Average vehicle speed in km/h (normal: 80-90, congested: <40)"
+    },
+    {
+      "name": "occupancy_pct",
+      "type": "double",
+      "doc": "Lane occupancy percentage (0-100)"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "TrafficStatus",
+        "symbols": [
+          "FLUID",
+          "MODERATE",
+          "CONGESTED",
+          "BLOCKED",
+          "OFFLINE"
+        ]
+      },
+      "doc": "Current traffic status at this sensor location"
+    }
+  ]
+}

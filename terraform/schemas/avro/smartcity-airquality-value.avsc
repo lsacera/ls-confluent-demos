@@ -1,0 +1,98 @@
+{
+  "type": "record",
+  "name": "AirQualityStation",
+  "namespace": "io.confluent.examples.smartcity",
+  "doc": "Air quality monitoring station data for Smart City Madrid",
+  "fields": [
+    {
+      "name": "station_id",
+      "type": "string",
+      "doc": "Unique identifier for the air quality station (e.g., AIR-CENTRO-001)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Timestamp of the reading in milliseconds since epoch"
+    },
+    {
+      "name": "district",
+      "type": "string",
+      "doc": "Madrid district where the station is located"
+    },
+    {
+      "name": "location_name",
+      "type": "string",
+      "doc": "Human-readable location name (e.g., Plaza del Carmen, Parque del Retiro)"
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Station latitude coordinate"
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Station longitude coordinate"
+    },
+    {
+      "name": "no2",
+      "type": "double",
+      "doc": "Nitrogen dioxide concentration in µg/m³ (limit: 40, bad: >100)"
+    },
+    {
+      "name": "pm25",
+      "type": "double",
+      "doc": "PM2.5 particulate matter in µg/m³ (good: <12, moderate: 12-35, bad: >35)"
+    },
+    {
+      "name": "pm10",
+      "type": "double",
+      "doc": "PM10 particulate matter in µg/m³ (good: <20, moderate: 20-50, bad: >50)"
+    },
+    {
+      "name": "o3",
+      "type": "double",
+      "doc": "Ozone concentration in µg/m³"
+    },
+    {
+      "name": "co",
+      "type": "double",
+      "doc": "Carbon monoxide concentration in mg/m³"
+    },
+    {
+      "name": "aqi",
+      "type": "int",
+      "doc": "Air Quality Index (0-100 good, 100-200 moderate, >200 bad)"
+    },
+    {
+      "name": "quality_level",
+      "type": {
+        "type": "enum",
+        "name": "AirQualityLevel",
+        "symbols": [
+          "GOOD",
+          "MODERATE",
+          "UNHEALTHY_SENSITIVE",
+          "UNHEALTHY",
+          "VERY_UNHEALTHY",
+          "HAZARDOUS"
+        ]
+      },
+      "doc": "Air quality classification level"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "StationStatus",
+        "symbols": [
+          "ONLINE",
+          "OFFLINE",
+          "MAINTENANCE",
+          "ERROR"
+        ]
+      },
+      "doc": "Operational status of the station"
+    }
+  ]
+}

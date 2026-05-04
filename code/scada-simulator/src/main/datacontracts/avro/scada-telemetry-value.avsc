@@ -1,0 +1,101 @@
+{
+  "type": "record",
+  "name": "ScadaTelemetry",
+  "namespace": "io.confluent.examples.scada",
+  "doc": "SCADA sensor telemetry data for energy grid monitoring in USA",
+  "fields": [
+    {
+      "name": "sensor_id",
+      "type": "string",
+      "doc": "Unique identifier for the sensor (e.g., SENSOR_TX_001)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Timestamp of the reading in milliseconds since epoch"
+    },
+    {
+      "name": "measurement_type",
+      "type": {
+        "type": "enum",
+        "name": "MeasurementType",
+        "symbols": [
+          "VOLTAGE",
+          "CURRENT",
+          "FREQUENCY",
+          "POWER_ACTIVE",
+          "POWER_REACTIVE",
+          "POWER_FACTOR",
+          "PRESSURE",
+          "FLOW",
+          "TEMPERATURE"
+        ]
+      },
+      "doc": "Type of measurement being recorded"
+    },
+    {
+      "name": "value",
+      "type": "double",
+      "doc": "Measured value"
+    },
+    {
+      "name": "unit",
+      "type": "string",
+      "doc": "Unit of measurement (kV, A, Hz, MW, MVAr, bar, m3/h, C)"
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Sensor latitude coordinate (USA range: ~25 to ~49)"
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Sensor longitude coordinate (USA range: ~-125 to ~-67)"
+    },
+    {
+      "name": "zone_id",
+      "type": "string",
+      "doc": "Geographic zone identifier (e.g., ZONE_TX_CENTRAL, ZONE_CA_NORTH)"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "doc": "US State code (e.g., TX, CA, NY, FL)"
+    },
+    {
+      "name": "city",
+      "type": "string",
+      "doc": "City name where sensor is located"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "SensorStatus",
+        "symbols": [
+          "NORMAL",
+          "WARNING",
+          "CRITICAL",
+          "OFFLINE"
+        ]
+      },
+      "doc": "Current operational status of the sensor"
+    },
+    {
+      "name": "grid_region",
+      "type": {
+        "type": "enum",
+        "name": "GridRegion",
+        "symbols": [
+          "ERCOT",
+          "WECC",
+          "EASTERN",
+          "TEXAS",
+          "QUEBEC"
+        ]
+      },
+      "doc": "Major grid interconnection region in North America"
+    }
+  ]
+}

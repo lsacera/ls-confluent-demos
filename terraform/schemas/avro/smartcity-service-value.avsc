@@ -1,0 +1,123 @@
+{
+  "type": "record",
+  "name": "CitizenService",
+  "namespace": "io.confluent.examples.smartcity",
+  "doc": "Citizen service request (Avisos Madrid - línea 010) for Smart City Madrid",
+  "fields": [
+    {
+      "name": "ticket_id",
+      "type": "string",
+      "doc": "Unique ticket identifier (e.g., AVM-2026-042301)"
+    },
+    {
+      "name": "created_at",
+      "type": "long",
+      "doc": "Ticket creation timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "updated_at",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Last update timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "resolved_at",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Resolution timestamp in milliseconds since epoch (null if not resolved)"
+    },
+    {
+      "name": "district",
+      "type": "string",
+      "doc": "Madrid district where the issue is located"
+    },
+    {
+      "name": "address",
+      "type": "string",
+      "doc": "Street address of the reported issue"
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Issue location latitude"
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Issue location longitude"
+    },
+    {
+      "name": "category",
+      "type": {
+        "type": "enum",
+        "name": "ServiceCategory",
+        "symbols": [
+          "ALUMBRADO_PUBLICO",
+          "LIMPIEZA_BASURA",
+          "BACHES_PAVIMENTO",
+          "PARQUES_JARDINES",
+          "MOBILIARIO_URBANO",
+          "OTROS"
+        ]
+      },
+      "doc": "Category of the service request"
+    },
+    {
+      "name": "subcategory",
+      "type": "string",
+      "doc": "Detailed subcategory (e.g., Farola apagada, Contenedor dañado)"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "doc": "Detailed description of the issue reported by citizen"
+    },
+    {
+      "name": "priority",
+      "type": {
+        "type": "enum",
+        "name": "Priority",
+        "symbols": [
+          "BAJA",
+          "MEDIA",
+          "ALTA",
+          "URGENTE"
+        ]
+      },
+      "doc": "Priority level of the service request"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "ServiceStatus",
+        "symbols": [
+          "ABIERTO",
+          "EN_PROCESO",
+          "PENDIENTE_VALIDACION",
+          "RESUELTO",
+          "CERRADO",
+          "RECHAZADO"
+        ]
+      },
+      "doc": "Current status of the service request"
+    },
+    {
+      "name": "sla_hours",
+      "type": "int",
+      "doc": "Service Level Agreement in hours (varies by category)"
+    },
+    {
+      "name": "citizen_email",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Email of the citizen who reported (optional, may be masked)"
+    },
+    {
+      "name": "citizen_phone",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Phone of the citizen who reported (optional, may be masked)"
+    }
+  ]
+}

@@ -1,0 +1,710 @@
+================================================================================
+SCADA ENERGY GRID MONITORING - DEMO SCRIPT
+Real-Time Stream Processing for Critical Infrastructure
+Confluent Cloud + Apache Flink
+================================================================================
+
+DEMO DURATION: 15-20 minutes
+AUDIENCE: Energy & Utilities executives, IT leaders, Operations managers
+OBJECTIVE: Showcase real-time streaming capabilities for grid monitoring,
+           anomaly detection, and predictive maintenance
+
+================================================================================
+SECTION 1: INTRODUCTION & BUSINESS CONTEXT (3 minutes)
+================================================================================
+
+"Today I'm excited to show you how Confluent's Data Streaming Platform can
+transform critical infrastructure monitoring for the energy sector.
+
+We're looking at a real-time SCADA system monitoring the electrical grid and
+gas network across the United States. This demo represents what many of our
+energy and utilities customers are doing today - moving from batch processing
+and delayed alerts to real-time monitoring and instant anomaly detection."
+
+KEY BUSINESS CHALLENGES:
+------------------------
+1. Grid Stability & Reliability
+   - Frequency deviations from 60 Hz can cascade into blackouts
+   - Traditional systems alert AFTER problems occur
+   - Need millisecond-level detection for critical thresholds
+
+2. Sensor Health & Predictive Maintenance
+   - Thousands of sensors across vast geographic areas
+   - Failed sensors = blind spots in the grid
+   - Reactive maintenance is costly and dangerous
+
+3. Regulatory Compliance & Reporting
+   - NERC (North American Electric Reliability Corporation) requirements
+   - Real-time documentation of grid events
+   - Audit trails for anomalies and incidents
+
+4. Operational Efficiency
+   - Reduce mean time to detection (MTTD)
+   - Reduce mean time to resolution (MTTR)
+   - Optimize resource allocation based on real-time insights
+
+================================================================================
+SECTION 2: SOLUTION OVERVIEW (2 minutes)
+================================================================================
+
+"What you're seeing is a complete streaming architecture built on Confluent
+Cloud. Let me walk you through what's happening:
+
+REAL-TIME DATA FLOW:
+-------------------
+- 180 sensors across 18 locations (10 sensors per location)
+  • Houston, Dallas, Austin, San Antonio (Texas/ERCOT)
+  • Los Angeles, San Francisco, San Diego, Phoenix, Seattle, Portland, Denver (West/WECC)
+  • New York, Boston, Philadelphia, Miami, Atlanta, Chicago, Detroit (East/EASTERN)
+- 3 major grid regions: ERCOT (Texas), WECC (West), EASTERN (East)
+- Telemetry every 5 seconds from each sensor with fixed IDs
+- That's 2,160 data points per minute (180 sensors × 12 readings/minute)
+- Sensors use Gaussian distribution for realistic, stable measurements
+
+MEASUREMENT TYPES:
+------------------
+Electrical Grid:
+  • Voltage: 132-765 kV transmission lines
+  • Current: 100-3,000 Amperes
+  • Frequency: 59.95-60.05 Hz (critical for stability)
+  • Active Power: 50-500 MW generation/consumption
+
+Gas Network:
+  • Pressure: 40-70 bar
+  • Flow: 1,000-50,000 m³/hour
+  • Temperature: 5-25°C
+
+APACHE FLINK PROCESSING:
+------------------------
+- Stream processing with windowed aggregations (1-min, 5-min, 10-min windows)
+- Real-time anomaly detection with tiered severity:
+  • WARNING: 15% deviation from normal range (predictive maintenance opportunity)
+  • CRITICAL: 25% deviation from normal range (immediate action required)
+- Automatic alerting with full context (location, value, threshold, timestamp)
+- Grid stability calculation: 100 - (ABS(frequency - 60.0) × 100), bounded [0-100]
+- No batch delays - insights in milliseconds, not minutes"
+
+================================================================================
+SECTION 3: DASHBOARD WALKTHROUGH (8-10 minutes)
+================================================================================
+
+--- OVERVIEW PAGE ---
+"Let's start with the Overview dashboard - your mission control.
+
+[Point out the Confluent logo in the header next to the title]
+
+Notice the Confluent branding here - this dashboard is powered end-to-end by
+Confluent Cloud. The logo reinforces that this is a production-ready solution
+built on enterprise streaming infrastructure."
+
+KPIs TO HIGHLIGHT:
+-----------------
+□ Total Sensors: 180 sensors across USA
+□ Active Alerts: Real-time count of WARNING + CRITICAL alerts
+□ Avg Grid Stability: 0-100 score based on frequency deviation
+  - 95+ = Excellent (green)
+  - 85-95 = Attention needed (yellow)
+  - <85 = Critical (red)
+□ Total Generation: Sum of active power across all sensors
+
+TALKING POINTS:
+"Notice the real-time nature - these numbers update every 10 seconds.
+In a traditional SCADA system, you'd be looking at 5-15 minute delays.
+
+The Grid Stability Score is calculated from frequency measurements. In the
+USA, the grid runs at 60 Hz. Even tiny deviations (±0.5 Hz) indicate serious
+problems. Our Flink query monitors this in real-time and calculates a
+stability score that operations teams can act on immediately."
+
+RECENT ALERTS:
+"Here you see the most recent anomalies detected by our system. Each one
+includes:
+- Sensor ID and location
+- Type of anomaly (voltage spike, frequency deviation, etc.)
+- Severity (WARNING or CRITICAL)
+- Measured value vs threshold
+- Timestamp - notice these are from seconds or minutes ago, not hours"
+
+--- ANOMALIES PAGE ---
+"The Anomalies page gives us deeper visibility into grid health issues."
+
+KEY METRICS:
+-----------
+□ Anomalies by Severity: Visual breakdown of CRITICAL vs WARNING
+□ Anomalies by Type: Which measurements are triggering alerts
+  - Voltage issues
+  - Frequency deviations
+  - Pressure anomalies
+  - Temperature spikes
+
+BUSINESS VALUE:
+"What's powerful here is the classification. Not all anomalies are equal:
+
+WARNING (15% deviation from normal range):
+  - Early indicator of potential problems
+  - Schedule investigation during business hours
+  - Predictive maintenance opportunity
+  - Example: Voltage at 880 kV (normal max: 765 kV)
+  - 880 is 15% above threshold → WARNING
+
+CRITICAL (25% deviation from normal range):
+  - Immediate action required
+  - Potential equipment failure or safety risk
+  - Page on-call engineer
+  - Example: Frequency at 61.2 Hz (normal range: 59.95-60.05 Hz)
+  - Massive deviation → CRITICAL
+
+This tiered approach prevents alert fatigue while ensuring critical issues
+get immediate attention. We generate roughly 600-800 anomalies per day
+across 180 sensors processing 2,000+ readings per minute. That's a ~2%
+anomaly rate - realistic for production grid monitoring."
+
+ANOMALY TABLE:
+"Each anomaly includes full context:
+- Geographic location (state, zone)
+- Exact measurement vs threshold
+- Timestamp for correlation with other events
+- Sensor ID for maintenance dispatch
+
+Operations can export this data for root cause analysis or regulatory
+reporting."
+
+--- GRID HEALTH PAGE ---
+"Now let's look at regional grid health - this is where we see the big picture."
+
+REGIONAL CARDS:
+--------------
+For each of the 3 grid regions (ERCOT, WECC, EASTERN):
+
+□ Grid Stability Score: Real-time stability metric
+□ Total Power: Aggregate generation in MW
+□ Average Frequency: Measured in Hz (should be ~60.00)
+□ Critical/Warning Alerts: Count by severity
+□ Active Sensors: Number of healthy sensors in region
+□ Power Balance: Generation vs Consumption (MW)
+
+TALKING POINTS:
+"This view is what grid operators live in during their shift. Each region
+has different characteristics:
+
+ERCOT (Texas):
+  - Isolated grid, not connected to other US grids
+  - Stability is critical - no backup from neighbors
+  - High renewable penetration creates frequency challenges
+
+WECC (Western):
+  - Large geographic area, diverse generation
+  - Interconnected with Canada
+  - Seasonal variations in hydro and solar
+
+EASTERN:
+  - Largest interconnection in North America
+  - Mix of coal, gas, nuclear, renewables
+  - Complex coordination between utilities
+
+The power balance metric shows if a region is generating more than it's
+consuming (positive) or importing power (negative). This is updated in
+real-time as load changes throughout the day."
+
+STABILITY TREND:
+"The trend chart shows stability over the last 24 hours. You can see:
+- Daily patterns (peaks during business hours)
+- Weather impacts (heat waves, cold snaps)
+- Generation changes (solar ramping up/down)
+- Anomaly events (sudden drops)
+
+This historical view helps operators understand if current conditions are
+normal or exceptional."
+
+--- SENSOR HEALTH PAGE ---
+"Sensor health is about infrastructure reliability - are we blind anywhere?"
+
+HEALTH STATUS:
+-------------
+We expect 12 readings per minute from each sensor (one every 5 seconds).
+
+□ HEALTHY: Sensor reporting consistently (≥8 readings/minute = 67% uptime)
+□ WARNING: Intermittent reporting (4-7 readings/minute = 33-58% uptime)
+□ CRITICAL: Rare readings (<4 readings/minute = <33% uptime)
+□ OFFLINE: No readings in last window (0 readings)
+
+BUSINESS IMPACT:
+"Why does this matter? A failed sensor means:
+- No visibility into that part of the grid
+- Potential safety risk if conditions deteriorate undetected
+- Regulatory non-compliance (NERC requires continuous monitoring)
+- Blind spot for operators making real-time load decisions
+
+Our system tracks consecutive failures - the count shows how many readings
+the sensor missed out of the expected 12. If a sensor misses 8+ consecutive
+readings, it's flagged CRITICAL. Maintenance teams can be dispatched before
+it goes completely offline.
+
+This is predictive maintenance in action: fix sensors based on actual health
+data, not arbitrary 6-month schedules."
+
+SENSORS REQUIRING ATTENTION:
+"This table prioritizes maintenance work:
+- CRITICAL sensors first (public safety priority)
+- Consecutive failures (how urgent is repair)
+- Last reading timestamp (how long has it been failing)
+- Location (route planning for field teams)
+
+This turns reactive 'fire fighting' into proactive maintenance scheduling."
+
+--- GEOGRAPHIC PAGE ---
+"Geographic view shows where problems are occurring across the country."
+
+USA MAP - ANOMALY HEAT MAP:
+---------------------------
+"The color intensity represents anomaly activity in the last 24 hours:
+- Light red: Few anomalies (stable region)
+- Dark red: High anomaly activity (needs investigation)
+
+This is much more useful than just showing sensor count, because:
+- It highlights problem areas dynamically
+- States with more activity show darker (actionable intelligence)
+- Operations can see geographic patterns (clustered issues vs scattered)
+- Heat waves, cold snaps, or regional events become immediately visible
+
+When you hover over a state, you see the exact anomaly count for the last 24h."
+
+STATE SUMMARY TABLE:
+"For each state, we show:
+- Total sensors deployed (10 per state in this demo)
+- Total anomalies (last 24 hours) - this drives the sort order
+- Critical alerts (red - immediate action needed)
+- Warning alerts (orange - schedule investigation)
+- Sensor health percentage (are the sensors themselves working?)
+
+Notice the table is sorted by total anomalies - states with the most problems
+are at the top. This is how operations teams prioritize their day.
+
+Example: If California shows 45 total anomalies (30 WARNING, 15 CRITICAL),
+that's a very different operational posture than Wyoming with 2 anomalies.
+The geographic distribution tells a story about grid stress patterns."
+
+RECENT ANOMALIES SECTION:
+"This section shows individual anomaly cards from the last hour:
+- Each card displays sensor ID, severity badge, alert type
+- Location information (state, zone) for dispatch coordination
+- Timestamp for event correlation
+- Measured value vs threshold for root cause analysis
+
+This granular view helps operators:
+- Correlate events (did multiple sensors in TX spike simultaneously?)
+- Dispatch field technicians with exact sensor IDs and locations
+- Investigate root causes with precise measurements
+- Document incidents for regulatory reporting (NERC compliance)
+
+Pattern detection matters: 10 voltage spikes in one zone at the same timestamp
+might indicate a transmission line issue. Scattered anomalies across different
+states and times are usually individual sensor calibration drift."
+
+--- ARCHITECTURE PAGE ---
+"Let's look under the hood at the streaming architecture."
+
+DATA PIPELINE:
+-------------
+1. SCADA Simulator (representing real sensors)
+   ↓
+2. Kafka Topics (scada-telemetry, scada-alerts)
+   ↓
+3. Apache Flink Processing (5 real-time queries)
+   ↓
+4. PostgreSQL (materialized views)
+   ↓
+5. Web Dashboard (real-time visualization)
+
+FLINK STATEMENTS:
+"These are the 5 Flink SQL queries running continuously:
+
+1. Telemetry Stream: Structured stream with watermarks for out-of-order event handling
+2. Anomaly Detection: Real-time threshold monitoring with 2-tier severity (15%/25%)
+3. Zone Aggregations: 5-minute tumbling windows for zone-level power and voltage stats
+4. Grid Region Stats: 10-minute windows calculating stability scores and power balance
+5. Sensor Health: 1-minute windows tracking reading frequency (expects 12/min per sensor)
+
+Each query processes 2,160 events per minute (180 sensors × 12), performing:
+- Windowed aggregations across time and geography
+- Complex calculations (grid stability formula, consecutive failure tracking)
+- Materialized view updates to PostgreSQL via sink connector
+- All with <1 second end-to-end latency
+
+The beauty of Flink SQL is operators don't need Java/Scala developers. These
+are declarative SQL queries that business analysts can understand and modify."
+
+KAFKA TOPICS:
+"Topic metrics show:
+- Messages per second (throughput)
+- Total message count (volume over time)
+- Partitions (parallel processing capability)
+
+This visibility helps operations monitor the health of the streaming
+platform itself."
+
+================================================================================
+SECTION 4: KEY SCENARIOS & USE CASES (3-4 minutes)
+================================================================================
+
+SCENARIO 1: FREQUENCY DEVIATION ALERT
+-------------------------------------
+"Let me show you what happens when we detect a frequency anomaly...
+
+[Navigate to Anomalies page]
+
+See this CRITICAL alert for frequency deviation? In a traditional system,
+this would be detected in 5-15 minutes by batch processing. By then, the
+grid could already be unstable.
+
+With our real-time system:
+- Detection: <1 second after threshold breach
+- Alert: Immediately visible on dashboard + notification sent
+- Context: Full location, severity, and measurement data
+- Action: Operator can initiate frequency regulation in seconds
+
+The difference between detecting this in 1 second vs 10 minutes could be
+the difference between automatic correction and a cascading blackout."
+
+SCENARIO 2: SENSOR FAILURE DETECTION
+------------------------------------
+"[Navigate to Sensor Health page]
+
+Notice these sensors in CRITICAL status with consecutive failures?
+
+Traditional approach:
+- Wait for monthly maintenance schedule
+- Discover failure during physical inspection
+- React after sensor has been offline for weeks
+
+Our approach:
+- Detect within 60 seconds of first missed reading
+- Flag in dashboard with urgency indicator
+- Maintenance team gets location and failure mode
+- Proactive dispatch before complete failure
+
+This is predictive maintenance powered by streaming data. Instead of
+scheduled maintenance every 6 months, we maintain based on actual sensor
+behavior."
+
+SCENARIO 3: REGIONAL GRID STRESS
+--------------------------------
+"[Navigate to Grid Health page]
+
+Look at the ERCOT region - let's say we see:
+- Stability Score: 87% (yellow zone)
+- Power Balance: -2,500 MW (importing power)
+- 15 WARNING alerts
+- Frequency: 59.92 Hz (below nominal)
+
+This pattern tells operators:
+- Texas is under stress (importing power, frequency dropping)
+- Not yet CRITICAL but trending wrong direction
+- Need to bring additional generation online
+- Monitor closely for next 30 minutes
+
+The real-time aggregations across all sensors give this regional view that
+would be impossible to calculate manually or in batch processing."
+
+SCENARIO 4: COMPLIANCE & REPORTING
+----------------------------------
+"Every anomaly is automatically logged with full context:
+- Timestamp (to the millisecond)
+- Sensor ID and location
+- Measured value and threshold
+- Severity classification
+- Zone and grid region
+
+For NERC compliance, utilities must document:
+- All frequency events
+- Equipment failures
+- Response times
+- Remediation actions
+
+Our system provides the real-time data foundation for compliance reporting.
+The same stream feeding the dashboard can also feed regulatory reporting
+systems, audit logs, and incident management platforms."
+
+================================================================================
+SECTION 5: TECHNICAL ARCHITECTURE DEEP DIVE (2 minutes - if time permits)
+================================================================================
+
+"Let me briefly explain the technical foundation:
+
+CONFLUENT CLOUD COMPONENTS:
+--------------------------
+• Kafka Cluster: Handles 2,000+ messages/minute with millisecond latency
+• Apache Flink Pool: Runs 5 continuous SQL queries processing streams
+• Schema Registry: Ensures data quality with Avro schemas
+• Connectors: PostgreSQL sink for materialized views
+
+KEY TECHNICAL CAPABILITIES:
+--------------------------
+1. Exactly-Once Semantics: No duplicate alerts or missed events
+2. Watermarking: Handles out-of-order events from sensor network
+3. Windowed Aggregations: Time-based processing (1-min, 5-min, 10-min windows)
+4. Stateful Processing: Tracks consecutive failures, running averages
+5. Scalability: Auto-scales from 180 to 18,000 sensors without code changes
+
+WHY CONFLUENT vs TRADITIONAL SCADA:
+-----------------------------------
+Traditional:
+  - Polling-based: Check sensors every 5-15 minutes
+  - Batch processing: Analyze data in scheduled jobs
+  - Siloed: Separate systems for different functions
+  - Limited scalability: Hardware constraints
+
+Confluent Approach:
+  - Event-driven: Process as data arrives
+  - Real-time: Millisecond latency end-to-end
+  - Unified platform: One system for all streaming needs
+  - Cloud-native: Infinite scalability, zero infrastructure management
+
+The result? Faster detection, better decisions, lower operational costs."
+
+================================================================================
+SECTION 6: BUSINESS VALUE & ROI (2 minutes)
+================================================================================
+
+QUANTIFIABLE BENEFITS:
+---------------------
+1. Reduced Downtime
+   - 80-90% faster anomaly detection
+   - Minutes saved per incident × incidents per year = significant savings
+   - Example: 1 hour of blackout costs $10M+ for major utility
+
+2. Improved Sensor Uptime
+   - Proactive maintenance reduces failures by 30-40%
+   - Sensor hardware lasts 20-30% longer with predictive maintenance
+   - Fewer emergency truck rolls (save $500-1000 per dispatch)
+
+3. Operational Efficiency
+   - Operators monitor 10x more sensors per person
+   - Automated alerting reduces manual monitoring costs
+   - Better resource allocation based on real-time priorities
+
+4. Compliance & Risk Mitigation
+   - Automatic logging and reporting for NERC compliance
+   - Reduced regulatory fines (can be $1M+ per violation)
+   - Better audit trails and incident documentation
+
+5. Grid Stability & Reliability
+   - Faster response to frequency deviations prevents cascading failures
+   - Better load balancing based on real-time generation data
+   - Improved customer satisfaction (fewer outages)
+
+TYPICAL ROI TIMELINE:
+--------------------
+- Implementation: 3-6 months
+- Payback period: 12-18 months
+- 3-year ROI: 300-500%
+
+Key cost savings:
+- Avoided outage costs (largest impact)
+- Reduced maintenance truck rolls
+- Lower labor costs for monitoring
+- Fewer regulatory fines
+- Extended sensor hardware life
+
+================================================================================
+SECTION 7: NEXT STEPS & CALL TO ACTION (2 minutes)
+================================================================================
+
+"Based on what we've seen today, here are the next steps we recommend:
+
+IMMEDIATE (Next 2 weeks):
+------------------------
+1. Architecture Review Workshop
+   - Map your current SCADA infrastructure
+   - Identify high-value use cases for real-time processing
+   - Document integration points (existing systems, protocols)
+
+2. Data Assessment
+   - What data are you collecting today?
+   - What frequency? (1 second, 1 minute, etc.)
+   - What formats? (Modbus, DNP3, OPC UA, etc.)
+   - Current storage and retention policies
+
+3. Proof of Concept Scoping
+   - Select 1-2 high-value use cases
+   - Define success metrics (MTTD, sensor uptime, etc.)
+   - Identify stakeholders (operations, IT, compliance)
+
+SHORT TERM (30-60 days):
+-----------------------
+1. Pilot Deployment
+   - Start with one grid region or zone
+   - 50-100 sensors for initial validation
+   - Deploy Confluent Cloud + Flink processing
+   - Build basic monitoring dashboard
+
+2. Stakeholder Training
+   - Operations team on new dashboard
+   - IT team on Confluent platform
+   - Management on new KPIs and metrics
+
+3. Measure Results
+   - Detection latency (before vs after)
+   - Sensor uptime (before vs after)
+   - Operator feedback and satisfaction
+   - Incident response times
+
+LONG TERM (6-12 months):
+-----------------------
+1. Full Production Rollout
+   - Expand to all sensors and regions
+   - Integrate with existing systems (EMS, OMS, etc.)
+   - Advanced analytics and ML models
+   - Mobile apps for field technicians
+
+2. Additional Use Cases
+   - Predictive maintenance for transformers, breakers
+   - Renewable energy integration and forecasting
+   - Demand response and load management
+   - Grid modernization and smart grid initiatives
+
+================================================================================
+SECTION 8: Q&A PREPARATION
+================================================================================
+
+COMMON QUESTIONS & ANSWERS:
+--------------------------
+
+Q: "How does this integrate with our existing SCADA system?"
+A: "Confluent acts as a real-time data layer. Your existing SCADA can continue
+    to operate while we add streaming capabilities. We've integrated with
+    Siemens, ABB, GE, and other major SCADA vendors. Common patterns:
+    - OPC UA connectors pull data into Kafka
+    - Protocol converters for Modbus, DNP3
+    - REST APIs for modern systems
+    The key is non-disruptive: add capabilities without replacing existing
+    infrastructure."
+
+Q: "What about latency and real-time guarantees?"
+A: "End-to-end latency is typically <1 second from sensor to dashboard.
+    For critical alerts:
+    - Sensor reading arrives in Kafka: <100ms
+    - Flink processing (watermark, window, aggregation): <200ms
+    - PostgreSQL sink: <200ms
+    - Dashboard update (10-sec polling): <500ms avg
+    Total: Under 1 second detection + up to 10 seconds for display refresh
+
+    For truly critical scenarios (frequency deviation), you'd add Kafka
+    consumers for sub-second notifications directly from the alerts topic,
+    bypassing the dashboard entirely."
+
+Q: "How does this handle sensor data quality issues?"
+A: "Great question. We use Avro schemas to validate every message. Invalid
+    data goes to an error topic for investigation. We also track:
+    - Out-of-range values (sensor miscalibration)
+    - Timestamp anomalies (clock drift)
+    - Missing fields (protocol issues)
+    - Duplicate readings (network retries)
+    Data quality monitoring is built into the streaming pipeline."
+
+Q: "What's the cost compared to our current system?"
+A: "Confluent Cloud is consumption-based pricing. For a typical deployment:
+    - Kafka cluster: ~$1-2/day
+    - Flink compute: ~$0.50-1/hour when running
+    - Storage: ~$0.10/GB/month
+    For 180 sensors, estimate $500-1000/month.
+
+    Compare to:
+    - On-prem SCADA upgrades: $500K-2M
+    - Maintenance and support: $100K+/year
+    - Outage costs avoided: $1M+ per incident
+
+    Cloud approach is 1/10th the cost with better capabilities."
+
+Q: "What about security and compliance?"
+A: "Confluent Cloud is certified for:
+    - SOC 2 Type II
+    - ISO 27001
+    - PCI DSS
+    - HIPAA (for healthcare)
+
+    For utilities specifically:
+    - NERC CIP compliance support
+    - Encryption in transit and at rest
+    - Role-based access control
+    - Audit logging
+    - VPC peering for private connectivity
+
+    We work with many regulated industries and understand compliance
+    requirements deeply."
+
+Q: "How quickly can we get started?"
+A: "We can have a proof of concept running in 2-4 weeks:
+    - Week 1: Architecture planning and data assessment
+    - Week 2: Confluent Cloud setup and connector configuration
+    - Week 3: Flink query development and testing
+    - Week 4: Dashboard deployment and user acceptance
+
+    For full production, plan 3-6 months depending on integration complexity
+    and number of sensors."
+
+Q: "Can this scale beyond our current needs?"
+A: "Absolutely. Confluent customers process:
+    - Millions of sensors (IoT deployments)
+    - Petabytes of data per day
+    - Billions of events per day
+
+    The architecture you've seen today scales from 180 sensors to 180,000
+    sensors without fundamental changes:
+    - Increase Kafka topic partitions (currently 6 for telemetry)
+    - Increase Flink parallelism (horizontal scaling)
+    - Adjust PostgreSQL connection pool for higher sink throughput
+
+    In production, one customer monitors 50,000+ grid sensors across North
+    America using this exact pattern. The only difference is scale, not
+    architecture."
+
+================================================================================
+CLOSING REMARKS
+================================================================================
+
+"Thank you for your time today. What we've shown is a production-ready
+architecture that leading utilities are using RIGHT NOW to modernize their
+grid monitoring and operations.
+
+The energy industry is undergoing massive transformation:
+- Renewable integration
+- Distributed generation
+- Electric vehicle charging
+- Grid modernization
+
+All of these require real-time data processing at massive scale. Confluent
+provides the foundation for this transformation.
+
+I'd love to schedule a follow-up to discuss your specific requirements and
+design a proof of concept tailored to your infrastructure.
+
+Questions?"
+
+================================================================================
+POST-DEMO FOLLOW-UP
+================================================================================
+
+SEND TO ATTENDEES:
+- Link to this demo (if publicly accessible)
+- Architecture diagram (high-level, no sensitive details)
+- ROI calculator spreadsheet
+- Case studies from similar utilities
+- Technical white paper on Confluent for Energy & Utilities
+- Proposed POC scope and timeline
+
+SCHEDULE:
+- Architecture workshop (1-2 hours)
+- Technical deep dive with IT team (if requested)
+- Executive briefing on ROI and timeline
+
+INTERNAL NOTES:
+- Document specific pain points mentioned
+- Note any existing systems/vendors mentioned
+- Identify key decision makers and influencers
+- Timeline and budget considerations
+- Competitive landscape (who else are they evaluating?)
+
+================================================================================
+END OF DEMO SCRIPT
+================================================================================

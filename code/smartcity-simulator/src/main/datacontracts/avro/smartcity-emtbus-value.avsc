@@ -1,0 +1,107 @@
+{
+  "type": "record",
+  "name": "EmtBus",
+  "namespace": "io.confluent.examples.smartcity",
+  "doc": "EMT Madrid bus telemetry data for Smart City public transport monitoring",
+  "fields": [
+    {
+      "name": "bus_id",
+      "type": "string",
+      "doc": "Unique bus identifier (e.g., EMT-4523)"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Timestamp of the reading in milliseconds since epoch"
+    },
+    {
+      "name": "line",
+      "type": "string",
+      "doc": "Bus line number (e.g., 1, 27, 6, N21 for night lines)"
+    },
+    {
+      "name": "route_name",
+      "type": "string",
+      "doc": "Human-readable route name (e.g., Plaza Castilla - Embajadores)"
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Current bus latitude coordinate"
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Current bus longitude coordinate"
+    },
+    {
+      "name": "speed",
+      "type": "double",
+      "doc": "Current speed in km/h"
+    },
+    {
+      "name": "heading",
+      "type": "int",
+      "doc": "Heading/direction in degrees (0-360)"
+    },
+    {
+      "name": "occupancy_pct",
+      "type": "double",
+      "doc": "Bus occupancy percentage (0-100, may exceed 100 if overcrowded)"
+    },
+    {
+      "name": "passenger_count",
+      "type": "int",
+      "doc": "Estimated number of passengers on board"
+    },
+    {
+      "name": "next_stop",
+      "type": "string",
+      "doc": "Name of the next bus stop"
+    },
+    {
+      "name": "next_stop_eta",
+      "type": "int",
+      "doc": "Estimated time of arrival to next stop in seconds"
+    },
+    {
+      "name": "delay_minutes",
+      "type": "int",
+      "doc": "Delay in minutes compared to schedule (negative if ahead, positive if behind)"
+    },
+    {
+      "name": "district",
+      "type": "string",
+      "doc": "Current Madrid district where the bus is located"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "BusStatus",
+        "symbols": [
+          "IN_SERVICE",
+          "AT_STOP",
+          "OUT_OF_SERVICE",
+          "MAINTENANCE",
+          "OFFLINE"
+        ]
+      },
+      "doc": "Current operational status of the bus"
+    },
+    {
+      "name": "vehicle_type",
+      "type": {
+        "type": "enum",
+        "name": "VehicleType",
+        "symbols": [
+          "STANDARD",
+          "ARTICULATED",
+          "ELECTRIC",
+          "HYBRID"
+        ]
+      },
+      "doc": "Type of bus vehicle"
+    }
+  ]
+}
