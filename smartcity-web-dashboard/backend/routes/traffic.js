@@ -170,22 +170,23 @@ router.get('/stats', async (req, res) => {
     }
 
     const query = `
-      WITH latest_traffic AS (
-        SELECT
-          sensor_id,
-          avg_speed,
-          vehicle_count,
-          traffic_status,
-          ROW_NUMBER() OVER (PARTITION BY sensor_id ORDER BY reading_timestamp DESC) as rn
-        FROM smartcity_traffic_stream
-        WHERE reading_timestamp > NOW() - INTERVAL '10 minutes'
+      WITH latest AS (
+        SELECT MAX(window_start) as latest_window
+        FROM smartcity_district_stats
       )
       SELECT
-        ROUND(CAST(AVG(avg_speed) AS NUMERIC), 1) as avg_speed,
-        SUM(vehicle_count) as total_vehicles,
-        COUNT(*) FILTER (WHERE traffic_status IN ('CONGESTED', 'BLOCKED')) as congested_count
-      FROM latest_traffic
-      WHERE rn = 1
+        ROUND(CAST(AVG(avg_traffic_speed) AS NUMERIC), 1) as avg_speed,
+        SUM(total_vehicles) as total_vehicles,
+        COUNT(*) FILTER (
+          WHERE CASE
+            WHEN avg_traffic_speed >= 25 THEN 'FLUID'
+            WHEN avg_traffic_speed >= 15 THEN 'MODERATE'
+            ELSE 'CONGESTED'
+          END IN ('CONGESTED', 'BLOCKED')
+        ) as congested_count
+      FROM smartcity_district_stats
+      CROSS JOIN latest
+      WHERE window_start = latest.latest_window
     `;
 
     const data = await executeQuery(query);
