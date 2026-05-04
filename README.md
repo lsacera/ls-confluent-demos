@@ -15,7 +15,7 @@ Simulates a USA energy grid with real-time telemetry from 180 electrical and gas
 ## 🏙️ **Smart City Madrid Demo** - Urban Intelligence Platform
 Simulates Madrid's urban systems with real-time data from **17 traffic sensors**, **12 air quality stations**, **11 EMT buses**, and **citizen service requests**. Demonstrates **traffic management**, **air quality monitoring**, **public transport optimization**, and **citizen engagement** using Flink SQL for smart city operations. Features an integrated **City Health Score** dashboard combining multiple urban metrics.
 
-<a href="https://www.youtube.com/watch?v=msJXtzAlj90" target="_blank">🎥 Watch SCADA Demo on YouTube</a>
+<a href="https://www.youtube.com/watch?v=msJXtzAlj90" target="_blank">🎥 Watch Smart City Demo on YouTube</a>
 
 All demos can be deployed **independently** or **together**, thanks to a modular Terraform architecture with feature flags.
 

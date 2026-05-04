@@ -46,6 +46,7 @@ code/payments-app/src/main/datacontracts/avro/payments-value-dqr.json
 *.local
 *.backup
 *_script.txt
+deploy-demos.sh
 
 # Backup and old files
 BACKUP/
