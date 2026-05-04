@@ -45,8 +45,7 @@ code/payments-app/src/main/datacontracts/avro/payments-value-dqr.json
 *my-personal-*
 *.local
 *.backup
-demo_scada_script.txt
-retail_demo_script.txt
+*_script.txt
 
 # Backup and old files
 BACKUP/
