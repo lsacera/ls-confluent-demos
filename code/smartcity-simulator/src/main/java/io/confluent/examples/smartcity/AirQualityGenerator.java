@@ -79,12 +79,14 @@ public class AirQualityGenerator {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
 
         // Pollution increases during rush hours and decreases at night
-        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 17 && hour <= 20);
+        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 18 && hour <= 21);
+        boolean isLunchHour = (hour >= 14 && hour <= 15);
         boolean isNight = hour >= 22 || hour <= 6;
 
         // Base pollution levels
         double basePollutionFactor = station.isUrbanCore ? 1.5 : 1.0;
         if (isRushHour) basePollutionFactor *= 1.4;
+        if (isLunchHour) basePollutionFactor *= 1.2;
         if (isNight) basePollutionFactor *= 0.6;
 
         // Generate pollutant concentrations

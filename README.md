@@ -13,7 +13,7 @@ Simulates a USA energy grid with real-time telemetry from 180 electrical and gas
 <a href="https://www.youtube.com/watch?v=3aAs8vcjKqU" target="_blank">🎥 Watch SCADA Demo on YouTube</a>
 
 ## 🏙️ **Smart City Madrid Demo** - Urban Intelligence Platform
-Simulates Madrid's urban systems with real-time data from **17 traffic sensors**, **12 air quality stations**, **11 EMT buses**, and **citizen service requests**. Demonstrates **traffic management**, **air quality monitoring**, **public transport optimization**, and **citizen engagement** using Flink SQL for smart city operations. Features an integrated **City Health Score** dashboard combining multiple urban metrics.
+Simulates Madrid's urban systems with real-time data from **17 traffic sensors**, **12 air quality stations**, **10 EMT buses**, and **citizen service requests**. Demonstrates **traffic management**, **air quality monitoring**, **public transport optimization**, and **citizen engagement** using Flink SQL for smart city operations. Features an integrated **City Health Score** dashboard combining multiple urban metrics.
 
 <a href="https://www.youtube.com/watch?v=msJXtzAlj90" target="_blank">🎥 Watch Smart City Demo on YouTube</a>
 
@@ -63,7 +63,7 @@ All demos can be deployed **independently** or **together**, thanks to a modular
 - **Data Sources**:
   - **Traffic Sensors** (17): M-30 ring road (5), Major avenues (4), Highway access (3), Downtown intersections (3), Smart parking (2)
   - **Air Quality Stations** (12): Urban core stations (4), Park locations (4), Peripheral areas (4)
-  - **EMT Buses** (11): Lines 1, 3, 6, 27, 74, 146, N21 with real-time telemetry
+  - **EMT Buses** (10): Lines 1, 3, 6, 27, 74, 146 with real-time telemetry
   - **Citizen Services**: 311-style requests (lighting, cleaning, potholes, parks, urban furniture)
 - **Dashboard Pages**: Overview, Traffic, Air Quality, EMT Buses, Services, Districts, Architecture
 
@@ -245,7 +245,7 @@ chmod +x deploy-smartcity-demo.sh
 ```
 
 This deploys:
-- Smart City Simulator (17 traffic sensors, 12 air quality stations, 11 EMT buses, citizen services)
+- Smart City Simulator (17 traffic sensors, 12 air quality stations, 10 EMT buses, citizen services)
 - Smart City Kafka topics and schemas
 - Smart City Flink queries (traffic analysis, air quality, EMT performance, city health)
 - Smart City web dashboard with integrated city health score
@@ -363,7 +363,7 @@ echo "Dashboard URL: http://$IP"
 - **Smart City Simulator** (Java): Generates urban telemetry from 40 sensors/services across Madrid (every 5 seconds)
   - 17 traffic sensors with rush hour patterns (7-10 AM, 5-8 PM)
   - 12 air quality stations with pollutant measurements (NO2, PM2.5, PM10, O3, CO)
-  - 11 EMT buses on 7 real Madrid bus lines with real-time position simulation
+  - 10 EMT buses on 6 real Madrid bus lines with real-time position simulation
   - Citizen service requests with SLA tracking and workflow states
 
 **Data Sources:**
@@ -374,7 +374,7 @@ echo "Dashboard URL: http://$IP"
   - Downtown Intersections: Puerta del Sol, Plaza de Cibeles, Plaza de España
   - Smart Parking: Parking-Centro, Parking-Retiro
 - **Air Quality Stations** (12 locations): Plaza de España, Retiro, Casa de Campo, Barajas, etc.
-- **EMT Bus Lines**: 1, 3, 6, 27, 74, 146, N21 (night service)
+- **EMT Bus Lines**: 1, 3, 6, 27, 74, 146
 - **Citizen Services**: ALUMBRADO_PUBLICO, LIMPIEZA_BASURA, BACHES_PAVIMENTO, PARQUES_JARDINES, MOBILIARIO_URBANO
 
 **Flink Queries** ([queries/smartcity/](queries/smartcity/)):
@@ -399,7 +399,7 @@ echo "Dashboard URL: http://$IP"
 - Overview: City health score, KPIs, recent alerts, critical incidents
 - Traffic: 17 sensors with status, speed, occupancy, congestion patterns
 - Air Quality: 12 stations with pollutant levels, AQI trends, health recommendations
-- EMT Buses: 11 buses with real-time position, delays, occupancy levels
+- EMT Buses: 10 buses with real-time position, delays, occupancy levels
 - Services: Citizen requests with SLA compliance, category breakdown, response times
 - Districts: Aggregated metrics by Madrid district, trends, rankings
 - Architecture: Data pipeline visualization, Flink statements, topic metrics

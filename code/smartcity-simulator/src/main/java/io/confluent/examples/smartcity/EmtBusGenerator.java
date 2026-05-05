@@ -84,18 +84,19 @@ public class EmtBusGenerator {
         updateBusPosition(bus);
 
         // Generate occupancy based on time of day
-        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 17 && hour <= 20);
+        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 18 && hour <= 21);
+        boolean isLunchHour = (hour >= 14 && hour <= 15);
         boolean isNight = hour >= 23 || hour <= 6;
 
-        double occupancyPct = generateOccupancy(bus.vehicleType, isRushHour, isNight);
+        double occupancyPct = generateOccupancy(bus.vehicleType, isRushHour, isLunchHour, isNight);
         int passengerCount = calculatePassengerCount(bus.vehicleType, occupancyPct);
 
         // Generate next stop info
         String nextStop = generateNextStop(bus.line);
         int nextStopEta = 60 + random.nextInt(180); // 1-3 minutes
 
-        // Generate delay (-3 to +8 minutes, biased towards delays)
-        int delayMinutes = random.nextInt(12) - 3;
+        // Generate delay based on time of day (more delays during rush hour)
+        int delayMinutes = generateDelay(isRushHour, isLunchHour, isNight);
 
         // Determine bus status
         BusStatus status = determineBusStatus(isNight);
@@ -155,13 +156,15 @@ public class EmtBusGenerator {
         }
     }
 
-    private double generateOccupancy(VehicleType type, boolean rushHour, boolean night) {
+    private double generateOccupancy(VehicleType type, boolean rushHour, boolean lunchHour, boolean night) {
         double baseOccupancy;
 
         if (night) {
             baseOccupancy = 10.0 + random.nextDouble() * 15.0; // 10-25%
         } else if (rushHour) {
             baseOccupancy = 70.0 + random.nextDouble() * 30.0; // 70-100% (can exceed)
+        } else if (lunchHour) {
+            baseOccupancy = 50.0 + random.nextDouble() * 25.0; // 50-75%
         } else {
             baseOccupancy = 30.0 + random.nextDouble() * 35.0; // 30-65%
         }
@@ -197,6 +200,22 @@ public class EmtBusGenerator {
 
         String[] stops = lineStops.getOrDefault(line, new String[]{"Parada Central", "Parada Norte", "Parada Sur"});
         return stops[random.nextInt(stops.length)];
+    }
+
+    private int generateDelay(boolean rushHour, boolean lunchHour, boolean night) {
+        if (night) {
+            // Night: buses are usually on time or early
+            return random.nextInt(4) - 2; // -2 to +1 minutes
+        } else if (rushHour) {
+            // Rush hour: significant delays due to traffic
+            return random.nextInt(16) - 1; // -1 to +14 minutes (mostly delayed)
+        } else if (lunchHour) {
+            // Lunch hour: moderate delays
+            return random.nextInt(10) - 2; // -2 to +7 minutes
+        } else {
+            // Normal hours: slight delays
+            return random.nextInt(8) - 3; // -3 to +4 minutes
+        }
     }
 
     private BusStatus determineBusStatus(boolean night) {

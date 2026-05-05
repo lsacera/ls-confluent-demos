@@ -90,14 +90,15 @@ public class TrafficSensorGenerator {
         long timestamp = System.currentTimeMillis();
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
 
-        // Simulate rush hour patterns (7-10 AM and 5-8 PM)
-        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 17 && hour <= 20);
+        // Simulate rush hour patterns (7-10 AM, 2-3 PM lunch, 6-9 PM evening)
+        boolean isRushHour = (hour >= 7 && hour <= 10) || (hour >= 18 && hour <= 21);
+        boolean isLunchHour = (hour >= 14 && hour <= 15);
         boolean isMidnight = hour >= 0 && hour <= 6;
 
         // Base traffic parameters depending on location type
-        int baseVehicleCount = getBaseVehicleCount(sensor.locationType, isRushHour, isMidnight);
-        double baseSpeed = getBaseSpeed(sensor.locationType, isRushHour, isMidnight);
-        double baseOccupancy = getBaseOccupancy(sensor.locationType, isRushHour, isMidnight);
+        int baseVehicleCount = getBaseVehicleCount(sensor.locationType, isRushHour, isLunchHour, isMidnight);
+        double baseSpeed = getBaseSpeed(sensor.locationType, isRushHour, isLunchHour, isMidnight);
+        double baseOccupancy = getBaseOccupancy(sensor.locationType, isRushHour, isLunchHour, isMidnight);
 
         // Add random variation (+/- 20%)
         int vehicleCount = addVariation(baseVehicleCount, 0.2);
@@ -130,7 +131,7 @@ public class TrafficSensorGenerator {
             .build();
     }
 
-    private int getBaseVehicleCount(LocationType type, boolean rushHour, boolean midnight) {
+    private int getBaseVehicleCount(LocationType type, boolean rushHour, boolean lunchHour, boolean midnight) {
         int base = switch (type) {
             case M30 -> 120;
             case MAIN_AVENUE -> 80;
@@ -141,10 +142,11 @@ public class TrafficSensorGenerator {
 
         if (midnight) return (int)(base * 0.2);
         if (rushHour) return (int)(base * 1.5);
+        if (lunchHour) return (int)(base * 1.2); // Mini peak during lunch
         return base;
     }
 
-    private double getBaseSpeed(LocationType type, boolean rushHour, boolean midnight) {
+    private double getBaseSpeed(LocationType type, boolean rushHour, boolean lunchHour, boolean midnight) {
         double base = switch (type) {
             case M30 -> 40.0;
             case MAIN_AVENUE -> 30.0;
@@ -155,10 +157,11 @@ public class TrafficSensorGenerator {
 
         if (midnight) return Math.min(60.0, base * 1.4);
         if (rushHour) return base * 0.5; // Heavy congestion in rush hour
+        if (lunchHour) return base * 0.7; // Moderate congestion during lunch
         return base;
     }
 
-    private double getBaseOccupancy(LocationType type, boolean rushHour, boolean midnight) {
+    private double getBaseOccupancy(LocationType type, boolean rushHour, boolean lunchHour, boolean midnight) {
         double base = switch (type) {
             case M30 -> 45.0;
             case MAIN_AVENUE -> 55.0;
@@ -169,6 +172,7 @@ public class TrafficSensorGenerator {
 
         if (midnight) return base * 0.3;
         if (rushHour) return Math.min(95.0, base * 1.6);
+        if (lunchHour) return Math.min(85.0, base * 1.3);
         return base;
     }
 
