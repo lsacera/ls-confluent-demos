@@ -50,46 +50,60 @@ terraform init
 echo ""
 echo -e "${BLUE}2. Planning deployment...${NC}"
 
-# Check if Retail demo is currently DEPLOYED (check Terraform state, not just tfvars)
+# Check which demos are currently deployed (check Terraform state, not just tfvars)
 RETAIL_DEPLOYED=$(terraform output -json retail_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")
+SMARTCITY_DEPLOYED=$(terraform output -json smartcity_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")
 
+echo "   Demo stacks to deploy:"
+
+# Check Retail
 if [ "$RETAIL_DEPLOYED" = "true" ]; then
-    echo "   Demo stacks to deploy:"
     echo "     ✓ Retail Demo (CURRENTLY DEPLOYED - will be preserved)"
-    echo "     ✓ SCADA Demo (will be added)"
-    echo ""
-    echo -e "${YELLOW}ℹ️  Retail demo is currently deployed - preserving it${NC}"
-    PRESERVE_RETAIL="true"
+    ENABLE_RETAIL="true"
 else
-    # Check tfvars to see if user wants retail enabled
     RETAIL_IN_TFVARS=$(grep -E "^\s*enable_retail_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
-
     if [ "$RETAIL_IN_TFVARS" = "true" ]; then
-        echo "   Demo stacks to deploy:"
         echo "     ✓ Retail Demo (enabled in tfvars)"
-        echo "     ✓ SCADA Demo (enabled)"
-        PRESERVE_RETAIL="true"
+        ENABLE_RETAIL="true"
     else
-        echo "   Demo stacks to deploy:"
         echo "     ✗ Retail Demo (not deployed)"
-        echo "     ✓ SCADA Demo (enabled)"
-        PRESERVE_RETAIL="false"
+        ENABLE_RETAIL="false"
+    fi
+fi
+
+echo "     ✓ SCADA Demo (will be deployed)"
+
+# Check SmartCity
+if [ "$SMARTCITY_DEPLOYED" = "true" ]; then
+    echo "     ✓ Smart City Demo (CURRENTLY DEPLOYED - will be preserved)"
+    ENABLE_SMARTCITY="true"
+else
+    SMARTCITY_IN_TFVARS=$(grep -E "^\s*enable_smartcity_demo\s*=" terraform.tfvars | grep -q "true" && echo "true" || echo "false")
+    if [ "$SMARTCITY_IN_TFVARS" = "true" ]; then
+        echo "     ✓ Smart City Demo (enabled in tfvars)"
+        ENABLE_SMARTCITY="true"
+    else
+        echo "     ✗ Smart City Demo (not deployed)"
+        ENABLE_SMARTCITY="false"
     fi
 fi
 
 echo ""
 
-# Create plan with SCADA demo enabled (preserve Retail if deployed or enabled in tfvars)
-if [ "$PRESERVE_RETAIL" = "true" ]; then
-    terraform plan \
-        -var="enable_scada_demo=true" \
-        -var="enable_retail_demo=true" \
-        -out=tfplan
-else
-    terraform plan \
-        -var="enable_scada_demo=true" \
-        -out=tfplan
+# Build terraform plan command
+PLAN_CMD="terraform plan -var=\"enable_scada_demo=true\""
+
+if [ "$ENABLE_RETAIL" = "true" ]; then
+    PLAN_CMD="$PLAN_CMD -var=\"enable_retail_demo=true\""
 fi
+
+if [ "$ENABLE_SMARTCITY" = "true" ]; then
+    PLAN_CMD="$PLAN_CMD -var=\"enable_smartcity_demo=true\""
+fi
+
+PLAN_CMD="$PLAN_CMD -out=tfplan"
+
+eval $PLAN_CMD
 
 echo ""
 echo -e "${BLUE}3. Review the plan above and confirm deployment...${NC}"

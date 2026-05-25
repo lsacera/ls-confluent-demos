@@ -8,14 +8,14 @@ CREATE TABLE IF NOT EXISTS product_sales (
      productid INT,
      brand STRING,
      productname STRING,
-     price INT,
+     price DECIMAL(10, 2),
      customerid INT NOT NULL,
      customername STRING,
      shipping_address_city STRING,
      shipping_address_state STRING,
      billing_address_state STRING,
      quantity INT,
-     total_amount INT,
+     total_amount DECIMAL(10, 2),
      WATERMARK FOR orderdate AS orderdate - INTERVAL '5' SECOND,
      PRIMARY KEY (orderitemid) NOT ENFORCED
 )

@@ -24,13 +24,27 @@ All demos can be deployed **independently** or **together**, thanks to a modular
 ### Shared Infrastructure (Always Deployed)
 - **Confluent Cloud**: Apache Kafka cluster with Apache Flink for stream processing
 - **AWS Infrastructure**:
-  - RDS PostgreSQL database for materialized views
+  - **Dedicated VPC** (10.0.0.0/16) with DNS support for isolated networking
+  - **RDS PostgreSQL database** for materialized views (secured within VPC)
+  - **Multi-AZ subnets** across availability zones for high availability
+  - **Security Groups** with restricted access (VPC, Confluent Cloud egress IPs, authorized IPs only)
   - ECS Fargate cluster for containerized applications
-  - VPC, Security Groups, and networking
   - ECR repositories for Docker image storage
   - S3 bucket for Tableflow (Iceberg data storage)
   - IAM roles and policies for Confluent Cloud integration
 - **Confluent Cloud Provider Integration**: Secure connection between Confluent Cloud and AWS S3 for Tableflow capabilities
+
+### Network Security
+The infrastructure implements **defense-in-depth** security:
+- **Dedicated VPC**: Isolated network (10.0.0.0/16) separate from default VPC
+- **PostgreSQL RDS Security**:
+  - Accessible **only from**:
+    - ECS VPC CIDR block (10.0.0.0/16) for containerized applications
+    - Confluent Cloud egress IPs (27 static IPs for us-east-1 connectors)
+    - Authorized external IP (configurable for remote access)
+  - **NOT** publicly accessible from internet (0.0.0.0/0)
+- **DNS Enabled**: VPC has DNS hostnames and resolution for RDS endpoint resolution
+- **Multi-AZ Deployment**: Subnets span multiple availability zones for redundancy
 
 ### 🛒 Retail Demo Components (Optional - via `enable_retail_demo=true`)
 - **Applications**:
@@ -78,12 +92,17 @@ All demos can be deployed **independently** or **together**, thanks to a modular
    * **Confluent Cloud API Keys** - [Cloud resource management API Keys](https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/service-accounts/api-keys/overview.html#resource-scopes) with Organisation Admin permissions.
 
 * **AWS Account** with appropriate permissions to create:
-  - VPC, Subnets, Security Groups
-  - RDS PostgreSQL instances
+  - VPC, Subnets, Security Groups (dedicated VPC will be created)
+  - RDS PostgreSQL instances (multi-AZ with restricted access)
   - ECS Fargate services
   - ECR repositories
   - S3 buckets
   - IAM roles and policies
+
+> **Security Note**: This deployment creates a **dedicated VPC** with **restricted database access**. The RDS PostgreSQL database is **NOT** publicly accessible from the internet. Access is limited to:
+> - Applications running in the ECS VPC (10.0.0.0/16)
+> - Confluent Cloud connector egress IPs (automatically configured)
+> - Optional: Your IP address (requires manual configuration in `terraform/aws.tf`)
 
 ### Required Tools
 
@@ -262,6 +281,19 @@ This deploys:
 - **Only deployed with Retail Demo** (`enable_retail_demo=true`)
 - SCADA and Smart City demos do **NOT** use CDC - they publish directly to Kafka
 - When deploying Retail Demo, expect a 120-second wait for CDC topics to be created (customers, addresses, products, orders)
+
+**Network Architecture Change (Important):**
+This demo now uses a **dedicated VPC** with enhanced security instead of the AWS default VPC:
+- ✅ **Dedicated VPC** (10.0.0.0/16) isolated from other AWS resources
+- ✅ **Multi-AZ subnets** for high availability
+- ✅ **DNS enabled** (required for RDS with public accessibility)
+- ✅ **Restricted database access** via Security Groups:
+  - ECS applications within VPC can access RDS
+  - Confluent Cloud connectors can access RDS (27 whitelisted egress IPs)
+  - External access requires explicit IP whitelisting (see Troubleshooting section)
+- ❌ Database is **NOT** open to the internet (0.0.0.0/0)
+
+**Why this matters**: The previous architecture used the default VPC with public access (0.0.0.0/0), which was convenient but insecure. The current architecture follows AWS best practices for production-ready deployments.
 
 ## Manual Deployment (Alternative)
 
@@ -476,29 +508,53 @@ enable_smartcity_demo = false  # Deploy Smart City Madrid demo
 │  │      Provider Integration (S3 Tableflow - Iceberg)          │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
-         │                           │                      │
-         │                           ▼                      │
-         │                  ┌─────────────────┐             │
-         │                  │ RDS PostgreSQL  │             │
-         │                  │ (Materialized   │             │
-         │                  │   Views)        │             │
-         │                  └─────────────────┘             │
-         │                           │                      │
-         ▼                           ▼                      ▼
-┌──────────────────┐  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐
-│ Fargate (retail) │  │ Fargate (scada) │  │ Fargate (smart   │  │   S3 Bucket     │
-│    DB Feeder     │  │   SCADA sim.    │  │     city)        │  │  (Tableflow/    │
-│   Payments App   │  │   Dashboard     │  │  Smart City sim. │  │   Iceberg)      │
-│    Dashboard     │  │                 │  │   Dashboard      │  │                 │
-└──────────────────┘  └─────────────────┘  └──────────────────┘  └─────────────────┘
-                                                            │
-                                                            ▼
-                                                   ┌─────────────────┐
-                                                   │  Amazon Athena  │
-                                                   │  Snowflake      │
-                                                   │  Databricks     │
-                                                   │  (optional)     │
-                                                   └─────────────────┘
+         │                                                   │
+         │   Confluent Egress IPs                            │
+         │   (27 whitelisted IPs)                            │
+         │                                                   │
+         ▼                                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     AWS Dedicated VPC (10.0.0.0/16)                 │
+│  ┌────────────────────────────────────────────────────────────┐     │
+│  │              Security Groups (Restricted Access)           │     │
+│  │  • ECS VPC CIDR: 10.0.0.0/16                              │     │
+│  │  • Confluent Cloud egress IPs (27 IPs for connectors)     │     │
+│  │  • Authorized external IP (optional for remote access)    │     │
+│  └────────────────────────────────────────────────────────────┘     │
+│                              │                                      │
+│                              ▼                                      │
+│                  ┌─────────────────────┐                            │
+│                  │   RDS PostgreSQL    │                            │
+│                  │   (Multi-AZ)        │                            │
+│                  │ ✓ DNS enabled       │                            │
+│                  │ ✓ Secured in VPC    │                            │
+│                  │ ✓ Private access    │                            │
+│                  └─────────────────────┘                            │
+│                           │                                         │
+│  ┌────────────────────────┴──────────────────────────┐              │
+│  │                 ECS Fargate Cluster               │              │
+│  │  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐           │
+│  │  │ Retail Apps  │ │  SCADA Apps   │ │ SmartCity    │           │
+│  │  │ • DB Feeder  │ │ • Simulator   │ │ • Simulator  │           │
+│  │  │ • Payments   │ │ • Dashboard   │ │ • Dashboard  │           │
+│  │  │ • Dashboard  │ │               │ │              │           │
+│  │  └──────────────┘ └───────────────┘ └──────────────┘           │
+│  └───────────────────────────────────────────────────┘              │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                  ┌──────────────────────┐
+                  │     S3 Bucket        │
+                  │  (Tableflow/Iceberg) │
+                  └──────────────────────┘
+                              │
+                              ▼
+                  ┌──────────────────────┐
+                  │  Amazon Athena       │
+                  │  Snowflake           │
+                  │  Databricks          │
+                  │  (optional)          │
+                  └──────────────────────┘
 ```
 
 **About Tableflow**: S3 bucket and Confluent Cloud Provider Integration enable [Tableflow](https://docs.confluent.io/cloud/current/flink/operate-and-deploy/tableflow.html), which materializes Kafka topics as Apache Iceberg tables in S3 for querying with Athena, Snowflake, or other analytics engines. 
@@ -563,8 +619,39 @@ Tableflow can be set in any topic and the S3 bucket will be ready for that matte
 | "Terraform init failed" | Ensure you're in the `terraform/` directory |
 | "ECR repository not found" | Wait for `terraform apply` to create resources |
 | "Dashboard shows no data" | Verify Flink queries are running in Confluent Cloud |
-| "Cannot connect to RDS" | Check security group allows your IP |
+| "Cannot connect to RDS from local machine" | RDS is secured within VPC. To access externally, add your IP to `aws.tf` security group rules (see below) |
+| "Connector failed: connection attempt failed" | Ensure Confluent Cloud egress IPs are whitelisted in RDS security group (already configured for us-east-1) |
+| "DB subnet group AZ coverage error" | Ensure `aws_availability_zones` data source filters for standard AZs only (already configured) |
+| "VPC network state fault" | Ensure VPC has `enable_dns_hostnames` and `enable_dns_support` set to true (already configured) |
 | "Feature flag error" | Use the corresponding deployment script (e.g., `./deploy-retail-demo.sh`) which sets the feature flags automatically |
+
+### Adding Your IP to RDS Security Group (Optional)
+
+If you need direct access to PostgreSQL from your local machine:
+
+1. Get your public IP:
+   ```bash
+   curl -4 ifconfig.me
+   ```
+
+2. Edit `terraform/aws.tf` and add a new security group rule:
+   ```hcl
+   resource "aws_security_group_rule" "allow_postgres_from_my_ip" {
+     type              = "ingress"
+     from_port         = 5432
+     to_port           = 5432
+     protocol          = "tcp"
+     security_group_id = aws_security_group.db_security_group.id
+     cidr_blocks       = ["YOUR_IP/32"]  # Replace with your IP
+     description       = "Allow PostgreSQL from my IP"
+   }
+   ```
+
+3. Apply the change:
+   ```bash
+   cd terraform
+   terraform apply
+   ```
 
 ### Viewing Logs
 
