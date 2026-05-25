@@ -50,3 +50,4 @@ deploy-demos.sh
 
 # Backup and old files
 BACKUP/
+*.bak
