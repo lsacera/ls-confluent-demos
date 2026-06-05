@@ -7,11 +7,8 @@ WORKDIR /opt/db_feeder_app
 # Copy all the project files into the container's working directory
 COPY . .
 
-# Change to the subdirectory where the project is located
-# WORKDIR /opt/learn-apache-flink-table-api-for-java-content/exercises
-
-# Run Maven to clean and package the project
-RUN mvn compile
+# Run Maven to compile the project (shows progress, downloads deps if needed)
+RUN mvn compile -DskipTests
 
 # Specify the command to run the Java application
 CMD ["mvn", "exec:java"]

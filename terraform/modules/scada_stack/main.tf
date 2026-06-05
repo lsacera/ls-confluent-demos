@@ -134,17 +134,28 @@ locals {
   scada_simulator_image_tag = "${aws_ecr_repository.scada_simulator_repo.repository_url}:latest"
 }
 
-# Build and Push SCADA Simulator using Docker provider
-resource "docker_image" "scada_simulator" {
-  name = "${aws_ecr_repository.scada_simulator_repo.repository_url}:latest"
-  build {
-    context = "../code/scada-simulator"
-    platform = "linux/amd64"
+# Build and Push SCADA images using external script
+# This avoids timeout issues with the Terraform Docker provider
+resource "null_resource" "build_and_push_scada_images" {
+  # Trigger rebuild when ECR repo changes
+  triggers = {
+    scada_simulator_repo = aws_ecr_repository.scada_simulator_repo.id
   }
+
+  provisioner "local-exec" {
+    command = "/Users/lsanchezacera/ls-confluent-demos/build-and-push-scada-images.sh us-east-1 ${aws_ecr_repository.scada_simulator_repo.name} ${var.prefix}-scada-dashboard"
+  }
+
+  depends_on = [
+    aws_ecr_repository.scada_simulator_repo
+  ]
 }
 
-resource "docker_registry_image" "scada_simulator" {
-  name = docker_image.scada_simulator.name
+# Reference the image that was just built
+data "docker_registry_image" "scada_simulator" {
+  name = "${aws_ecr_repository.scada_simulator_repo.repository_url}:latest"
+
+  depends_on = [null_resource.build_and_push_scada_images]
 }
 
 # CloudWatch Log Group
@@ -208,7 +219,7 @@ resource "aws_ecs_service" "scada_simulator_service" {
   }
 
   depends_on = [
-    docker_registry_image.scada_simulator,
+    data.docker_registry_image.scada_simulator,
     confluent_schema.avro-scada-telemetry,
     confluent_schema.avro-scada-alerts
   ]

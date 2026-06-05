@@ -39,9 +39,10 @@ The infrastructure implements **defense-in-depth** security:
 - **Dedicated VPC**: Isolated network (10.0.0.0/16) separate from default VPC
 - **PostgreSQL RDS Security**:
   - Accessible **only from**:
+    - **Your current public IP** (automatically detected during deployment)
     - ECS VPC CIDR block (10.0.0.0/16) for containerized applications
     - Confluent Cloud egress IPs (27 static IPs for us-east-1 connectors)
-    - Authorized external IP (configurable for remote access)
+    - Optional Twingate/VPN IP (if configured via `twingate_ip` variable)
   - **NOT** publicly accessible from internet (0.0.0.0/0)
 - **DNS Enabled**: VPC has DNS hostnames and resolution for RDS endpoint resolution
 - **Multi-AZ Deployment**: Subnets span multiple availability zones for redundancy
@@ -100,9 +101,10 @@ The infrastructure implements **defense-in-depth** security:
   - IAM roles and policies
 
 > **Security Note**: This deployment creates a **dedicated VPC** with **restricted database access**. The RDS PostgreSQL database is **NOT** publicly accessible from the internet. Access is limited to:
+> - **Your current public IP** (automatically detected during deployment - no configuration needed)
 > - Applications running in the ECS VPC (10.0.0.0/16)
-> - Confluent Cloud connector egress IPs (automatically configured)
-> - Optional: Your IP address (requires manual configuration in `terraform/aws.tf`)
+> - Confluent Cloud connector egress IPs (automatically configured for us-east-1)
+> - **Optional**: Twingate/VPN IP address (configure `twingate_ip` variable in `terraform.tfvars` for persistent remote access)
 
 ### Required Tools
 
@@ -205,6 +207,11 @@ prefix = "ls-demo"  # ⚠️ DO NOT CHANGE unless you update all Flink queries
 enable_retail_demo    = false   # 🛒 Retail demo
 enable_scada_demo     = false   # ⚡ SCADA demo
 enable_smartcity_demo = false   # 🏙️ Smart City Madrid demo
+
+# Optional: Persistent remote database access via Twingate/VPN
+# Your current public IP is automatically detected and allowed during deployment
+# Only configure this if you need persistent access from a specific VPN/Twingate IP
+# twingate_ip = "203.0.113.1"  # Uncomment and set your Twingate/VPN IP if needed
 
 # Optional: Data warehouse integration (COMPLETELY OPTIONAL - demos work without it)
 data_warehouse = "none"  # Options: "none", "redshift", "snowflake"

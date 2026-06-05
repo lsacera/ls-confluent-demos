@@ -91,6 +91,11 @@ output "smartcity_dashboard_task_arn" {
   description = "ECS task definition ARN for Smart City dashboard"
 }
 
+output "images_build_trigger" {
+  description = "Null resource that builds Docker images - used as dependency"
+  value       = null_resource.build_and_push_smartcity_images.id
+}
+
 output "smartcity_dashboard_log_group" {
   value       = aws_cloudwatch_log_group.smartcity-dashboard-log-group.name
   description = "CloudWatch log group for Smart City dashboard"

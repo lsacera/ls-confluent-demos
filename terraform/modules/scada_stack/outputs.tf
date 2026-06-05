@@ -49,3 +49,8 @@ output "scada_simulator_task_arn" {
   value       = aws_ecs_task_definition.scada_simulator_task.arn
   description = "ECS task definition ARN for SCADA simulator"
 }
+
+output "images_build_trigger" {
+  description = "Null resource that builds Docker images - used as dependency"
+  value       = null_resource.build_and_push_scada_images.id
+}

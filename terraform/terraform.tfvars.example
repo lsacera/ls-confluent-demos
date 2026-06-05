@@ -8,3 +8,6 @@ data_warehouse = "none" # Options: snowflake, redshift, or none
 prefix = "<YOUR_PREFIX>" # Prefix to identify resources
 
 cloud_region = "us-east-1" # AWS region
+
+# Optional: Twingate IP for database access (leave empty if not using Twingate)
+# twingate_ip = "213.94.23.170"

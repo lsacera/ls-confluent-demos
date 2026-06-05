@@ -53,22 +53,16 @@ resource "aws_ecr_lifecycle_policy" "retail_dashboard_lifecycle" {
 # Retail Dashboard - Docker Image
 # ----------------------------------------
 
-resource "docker_image" "retail_dashboard" {
+# Reference the dashboard image (built by null_resource in retail_stack module)
+data "docker_registry_image" "retail_dashboard" {
   count = local.deploy_retail ? 1 : 0
   name  = "${aws_ecr_repository.retail_dashboard[0].repository_url}:latest"
 
-  build {
-    context    = "../retail-web-dashboard"
-    platform   = "linux/amd64"
-    dockerfile = "Dockerfile"
-  }
-
-  depends_on = [aws_ecr_repository.retail_dashboard]
-}
-
-resource "docker_registry_image" "retail_dashboard" {
-  count = local.deploy_retail ? 1 : 0
-  name  = docker_image.retail_dashboard[0].name
+  # Dashboard is built by the same null_resource that builds payment and dbfeeder
+  # We reference the trigger output to ensure proper dependency
+  depends_on = [
+    module.retail_stack
+  ]
 }
 
 # ----------------------------------------
@@ -166,7 +160,7 @@ resource "aws_ecs_service" "retail_dashboard_service" {
 
   depends_on = [
     aws_db_instance.postgres_db,
-    docker_registry_image.retail_dashboard,
+    data.docker_registry_image.retail_dashboard,
     module.retail_flink_queries
   ]
 }
@@ -219,22 +213,15 @@ resource "aws_ecr_lifecycle_policy" "scada_dashboard_lifecycle" {
 # SCADA Dashboard - Docker Image
 # ----------------------------------------
 
-resource "docker_image" "scada_dashboard" {
+# Reference the SCADA dashboard image (built by null_resource in scada_stack module)
+data "docker_registry_image" "scada_dashboard" {
   count = local.deploy_scada ? 1 : 0
   name  = "${aws_ecr_repository.scada_dashboard[0].repository_url}:latest"
 
-  build {
-    context    = "../scada-web-dashboard"
-    platform   = "linux/amd64"
-    dockerfile = "Dockerfile"
-  }
-
-  depends_on = [aws_ecr_repository.scada_dashboard]
-}
-
-resource "docker_registry_image" "scada_dashboard" {
-  count = local.deploy_scada ? 1 : 0
-  name  = docker_image.scada_dashboard[0].name
+  # Dashboard is built by the same null_resource that builds scada-simulator
+  depends_on = [
+    module.scada_stack
+  ]
 }
 
 # ----------------------------------------
@@ -332,7 +319,7 @@ resource "aws_ecs_service" "scada_dashboard_service" {
 
   depends_on = [
     aws_db_instance.postgres_db,
-    docker_registry_image.scada_dashboard,
+    data.docker_registry_image.scada_dashboard,
     module.scada_flink_queries
   ]
 }

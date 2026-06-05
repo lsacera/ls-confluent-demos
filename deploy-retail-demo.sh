@@ -65,6 +65,10 @@ terraform init
 
 echo ""
 echo -e "${BLUE}2. Planning deployment...${NC}"
+echo ""
+echo "NOTE: Docker images will be built automatically by Terraform using build-and-push-images.sh"
+echo "      This happens AFTER config files are created, avoiding the Docker provider timeout issue"
+echo ""
 
 # Check which demos are currently deployed (check Terraform state, not just tfvars)
 SCADA_DEPLOYED=$(terraform output -json scada_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")

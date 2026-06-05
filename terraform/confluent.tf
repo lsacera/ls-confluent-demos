@@ -383,17 +383,21 @@ locals {
 #       It is now created conditionally when retail demo is enabled.
 
 # ------------------------------------------------------
-# Wait for CDC Connector to populate topics before Flink
+# Wait for ECS Services to create PostgreSQL tables before Flink
 # ------------------------------------------------------
+# This ensures that PostgreSQL tables exist before Flink tries to query them.
+# The CDC connector may be ready before the ECS containers (payment-app, dbfeeder)
+# have started and created the database tables.
 
 resource "time_sleep" "wait_for_cdc_topics" {
   count = var.enable_retail_demo ? 1 : 0
 
   depends_on = [
-    confluent_connector.postgre-sql-cdc-source[0]
+    confluent_connector.postgre-sql-cdc-source[0],
+    module.retail_stack[0]
   ]
 
-  create_duration = "120s"  # Wait 2 minutes for topics to be created and populated
+  create_duration = "480s"  # Wait 8 minutes for ECS apps to start, create PostgreSQL tables, and CDC to sync them
 }
 
 # ------------------------------------------------------

@@ -18,14 +18,15 @@ resource "aws_security_group_rule" "allow_inbound_postgres_from_vpc" {
   description       = "Allow PostgreSQL from ECS VPC"
 }
 
-# Allow inbound PostgreSQL from Twingate IP (for local access)
+# Allow inbound PostgreSQL from Twingate IP (for local access) - only if provided
 resource "aws_security_group_rule" "allow_inbound_postgres_from_twingate" {
+  count             = var.twingate_ip != "" ? 1 : 0
   type              = "ingress"
   from_port         = 5432
   to_port           = 5432
   protocol          = "tcp"
   security_group_id = aws_security_group.db_security_group.id
-  cidr_blocks       = ["213.94.23.170/32"]  # Twingate IP
+  cidr_blocks       = ["${var.twingate_ip}/32"]
   description       = "Allow PostgreSQL from Twingate IP"
 }
 
@@ -79,6 +80,21 @@ resource "aws_security_group_rule" "allow_outbound_postgres" {
   description       = "Allow all outbound traffic"
 }
 
+# Get current public IP for database initialization
+data "http" "myip" {
+  url = "https://checkip.amazonaws.com"
+}
+
+# Allow temporary access from current IP for database initialization
+resource "aws_security_group_rule" "allow_inbound_postgres_from_current_ip" {
+  type              = "ingress"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  security_group_id = aws_security_group.db_security_group.id
+  cidr_blocks       = ["${chomp(data.http.myip.response_body)}/32"]
+  description       = "Temporary: Allow PostgreSQL from current public IP for initialization"
+}
 
 # DB Subnet Group for RDS in ECS VPC
 resource "aws_db_subnet_group" "postgres_subnet_group" {
@@ -139,6 +155,7 @@ resource "docker_container" "psql_init" {
   name      = "psql-init-ls-retail"
   image     = docker_image.postgres_client.name
   must_run  = false
+  network_mode = "host"
   env       = [
     "PGPASSWORD=${var.db_password}"
   ]
@@ -194,7 +211,10 @@ resource "docker_container" "psql_init" {
     );"
     EOC
   ]
-  depends_on = [aws_db_instance.postgres_db]
+  depends_on = [
+    aws_db_instance.postgres_db,
+    aws_security_group_rule.allow_inbound_postgres_from_current_ip
+  ]
 }
 
 

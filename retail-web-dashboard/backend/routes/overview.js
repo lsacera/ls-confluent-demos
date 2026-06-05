@@ -87,9 +87,13 @@ router.get('/comparison', async (req, res, next) => {
         current_period.revenue as today_revenue,
         previous_period.revenue as yesterday_revenue,
         CASE
-          WHEN previous_period.revenue > 0 THEN
+          WHEN previous_period.revenue IS NULL OR previous_period.revenue = 0 THEN
+            CASE
+              WHEN current_period.revenue > 0 THEN 100
+              ELSE 0
+            END
+          ELSE
             ((current_period.revenue - previous_period.revenue) / previous_period.revenue) * 100
-          ELSE 0
         END as change_percent
       FROM current_period, previous_period
     `;

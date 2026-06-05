@@ -136,6 +136,10 @@ terraform init
 
 echo ""
 echo -e "${BLUE}2. Planning deployment...${NC}"
+echo ""
+echo "NOTE: Docker images will be built automatically by Terraform using build-and-push-smartcity-images.sh"
+echo "      This avoids the Docker provider timeout issue and shows build progress"
+echo ""
 
 # Check which demos are currently deployed
 RETAIL_DEPLOYED=$(terraform output -json retail_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "false")

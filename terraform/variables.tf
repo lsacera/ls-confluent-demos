@@ -94,3 +94,9 @@ variable "enable_smartcity_demo" {
   type        = bool
   default     = false
 }
+
+variable "twingate_ip" {
+  description = "Twingate IP address for database access (optional, leave empty if not using Twingate)"
+  type        = string
+  default     = ""
+}

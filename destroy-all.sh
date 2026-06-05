@@ -26,6 +26,7 @@ echo ""
 
 RETAIL_DEPLOYED=$(terraform output -json retail_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "unknown")
 SCADA_DEPLOYED=$(terraform output -json scada_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "unknown")
+SMARTCITY_DEPLOYED=$(terraform output -json smartcity_stack_deployed 2>/dev/null | jq -r '.' 2>/dev/null || echo "unknown")
 
 echo "Currently deployed demo stacks:"
 if [ "$RETAIL_DEPLOYED" = "true" ]; then
@@ -38,6 +39,12 @@ if [ "$SCADA_DEPLOYED" = "true" ]; then
     echo -e "  ${GREEN}✓${NC} SCADA Demo (Energy Grid)"
 elif [ "$SCADA_DEPLOYED" = "false" ]; then
     echo "  ✗ SCADA Demo (not deployed)"
+fi
+
+if [ "$SMARTCITY_DEPLOYED" = "true" ]; then
+    echo -e "  ${GREEN}✓${NC} Smart City Madrid Demo (Urban Intelligence)"
+elif [ "$SMARTCITY_DEPLOYED" = "false" ]; then
+    echo "  ✗ Smart City Madrid Demo (not deployed)"
 fi
 
 echo ""
@@ -65,6 +72,15 @@ if [ "$SCADA_DEPLOYED" = "true" ]; then
     echo "   • SCADA Simulator (ECS service + ECR repository)"
     echo "   • Kafka topics: scada-telemetry, scada-alerts"
     echo "   • Avro schemas (SCADA-specific)"
+    echo "   • CloudWatch Log Groups"
+    echo ""
+fi
+
+if [ "$SMARTCITY_DEPLOYED" = "true" ]; then
+    echo "Smart City Madrid Demo Resources:"
+    echo "   • Smart City Simulators (Traffic, Air Quality, EMT, Citizen Services)"
+    echo "   • Kafka topics: traffic-data, air-quality, emt-buses, citizen-services, smartcity-alerts"
+    echo "   • Avro schemas (Smart City-specific)"
     echo "   • CloudWatch Log Groups"
     echo ""
 fi
@@ -101,7 +117,10 @@ if [ "$RETAIL_DEPLOYED" = "true" ]; then
     echo "  ✓ Retail Demo (DB Feeder, Payments App)"
 fi
 if [ "$SCADA_DEPLOYED" = "true" ]; then
-    echo "  ✓ SCADA Demo"
+    echo "  ✓ SCADA Demo (Energy Grid)"
+fi
+if [ "$SMARTCITY_DEPLOYED" = "true" ]; then
+    echo "  ✓ Smart City Madrid Demo (Urban Intelligence)"
 fi
 echo "  ✓ Confluent Cloud resources"
 echo "  ✓ AWS infrastructure (VPC, RDS, ECS)"
@@ -117,5 +136,5 @@ SECONDS_REMAINING=$((ELAPSED_TIME % 60))
 
 echo -e "${GREEN}⏱️  Total destruction time: ${MINUTES}m ${SECONDS_REMAINING}s${NC}"
 echo ""
-echo -e "${BLUE}💡 Tip: To deploy again, run ./deploy-retail-demo.sh or ./deploy-scada-demo.sh or ./deploy-all.sh${NC}"
+echo -e "${BLUE}💡 Tip: To deploy again, run ./deploy-retail-demo.sh or ./deploy-scada-demo.sh or ./deploy-smartcity-demo.sh or ./deploy-demos.sh${NC}"
 echo ""

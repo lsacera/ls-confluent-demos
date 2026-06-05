@@ -17,9 +17,19 @@ output "payment_app_ecr_repository_url" {
   value       = aws_ecr_repository.payment_app_repo.repository_url
 }
 
+output "payment_ecr_repo_name" {
+  description = "ECR repository name for payment app"
+  value       = aws_ecr_repository.payment_app_repo.name
+}
+
 output "dbfeeder_app_ecr_repository_url" {
   description = "ECR repository URL for dbfeeder app"
   value       = aws_ecr_repository.dbfeeder_app_repo.repository_url
+}
+
+output "dbfeeder_ecr_repo_name" {
+  description = "ECR repository name for dbfeeder app"
+  value       = aws_ecr_repository.dbfeeder_app_repo.name
 }
 
 output "payment_app_service_name" {
@@ -40,4 +50,9 @@ output "payments_topic_name" {
 output "error_payments_topic_name" {
   description = "Kafka topic name for error payments"
   value       = confluent_kafka_topic.error-payments-topic.topic_name
+}
+
+output "images_build_trigger" {
+  description = "Null resource that builds Docker images - used as dependency"
+  value       = null_resource.build_and_push_images.id
 }

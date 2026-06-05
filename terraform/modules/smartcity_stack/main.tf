@@ -223,17 +223,30 @@ locals {
   smartcity_simulator_image_tag = "${aws_ecr_repository.smartcity_simulator_repo.repository_url}:latest"
 }
 
-# Build and Push Smart City Simulator using Docker provider
-resource "docker_image" "smartcity_simulator" {
-  name = "${aws_ecr_repository.smartcity_simulator_repo.repository_url}:latest"
-  build {
-    context  = "../code/smartcity-simulator"
-    platform = "linux/amd64"
+# Build and Push Smart City images using external script
+# This avoids timeout issues with the Terraform Docker provider
+resource "null_resource" "build_and_push_smartcity_images" {
+  # Trigger rebuild when ECR repos change
+  triggers = {
+    smartcity_simulator_repo = aws_ecr_repository.smartcity_simulator_repo.id
+    smartcity_dashboard_repo = aws_ecr_repository.smartcity_dashboard_repo.id
   }
+
+  provisioner "local-exec" {
+    command = "/Users/lsanchezacera/ls-confluent-demos/build-and-push-smartcity-images.sh us-east-1 ${aws_ecr_repository.smartcity_simulator_repo.name} ${aws_ecr_repository.smartcity_dashboard_repo.name}"
+  }
+
+  depends_on = [
+    aws_ecr_repository.smartcity_simulator_repo,
+    aws_ecr_repository.smartcity_dashboard_repo
+  ]
 }
 
-resource "docker_registry_image" "smartcity_simulator" {
-  name = docker_image.smartcity_simulator.name
+# Reference the simulator image that was just built
+data "docker_registry_image" "smartcity_simulator" {
+  name = "${aws_ecr_repository.smartcity_simulator_repo.repository_url}:latest"
+
+  depends_on = [null_resource.build_and_push_smartcity_images]
 }
 
 # CloudWatch Log Group
@@ -301,7 +314,7 @@ resource "aws_ecs_service" "smartcity_simulator_service" {
   }
 
   depends_on = [
-    docker_registry_image.smartcity_simulator,
+    data.docker_registry_image.smartcity_simulator,
     confluent_schema.avro-smartcity-traffic,
     confluent_schema.avro-smartcity-airquality,
     confluent_schema.avro-smartcity-emtbus,
@@ -327,17 +340,11 @@ locals {
   smartcity_dashboard_image_tag = "${aws_ecr_repository.smartcity_dashboard_repo.repository_url}:latest"
 }
 
-# Build and Push Smart City Dashboard using Docker provider
-resource "docker_image" "smartcity_dashboard" {
+# Reference the dashboard image that was built by the same null_resource above
+data "docker_registry_image" "smartcity_dashboard" {
   name = "${aws_ecr_repository.smartcity_dashboard_repo.repository_url}:latest"
-  build {
-    context  = "../smartcity-web-dashboard"
-    platform = "linux/amd64"
-  }
-}
 
-resource "docker_registry_image" "smartcity_dashboard" {
-  name = docker_image.smartcity_dashboard.name
+  depends_on = [null_resource.build_and_push_smartcity_images]
 }
 
 # CloudWatch Log Group for Dashboard
@@ -420,7 +427,7 @@ resource "aws_ecs_service" "smartcity_dashboard_service" {
   }
 
   depends_on = [
-    docker_registry_image.smartcity_dashboard,
+    data.docker_registry_image.smartcity_dashboard,
     confluent_schema.avro-smartcity-traffic,
     confluent_schema.avro-smartcity-airquality,
     confluent_schema.avro-smartcity-emtbus,

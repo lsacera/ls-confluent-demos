@@ -220,45 +220,44 @@ locals {
   dbfeeder_app_image_tag = "${aws_ecr_repository.dbfeeder_app_repo.repository_url}:latest"
 }
 
-# Build and Push Payment App using Docker provider
-resource "docker_image" "payment_app" {
-  name = "${aws_ecr_repository.payment_app_repo.repository_url}:latest"
-  build {
-    context  = "../code/payments-app"
-    platform = "linux/amd64"
-  }
+# Build and Push ALL images using external script
+# This avoids timeout issues with the Terraform Docker provider
+resource "null_resource" "build_and_push_images" {
+  # Trigger rebuild when config files change
   triggers = {
-    properties_file = sha256(local_file.payment_app_properties.content)
-    dqr_file       = sha256(local_file.payment_app_dqr.content)
+    payment_props = sha256(local_file.payment_app_properties.content)
+    payment_dqr   = sha256(local_file.payment_app_dqr.content)
+    dbfeeder_props = sha256(local_file.db_feeder_properties.content)
   }
+
+  provisioner "local-exec" {
+    command = "/Users/lsanchezacera/ls-confluent-demos/build-and-push-images.sh us-east-1 ${aws_ecr_repository.payment_app_repo.name} ${aws_ecr_repository.dbfeeder_app_repo.name} ${var.prefix}-retail-dashboard"
+  }
+
   depends_on = [
     local_file.payment_app_properties,
-    local_file.payment_app_dqr
+    local_file.payment_app_dqr,
+    local_file.db_feeder_properties,
+    aws_ecr_repository.payment_app_repo,
+    aws_ecr_repository.dbfeeder_app_repo
   ]
 }
 
-resource "docker_registry_image" "payment_app" {
-  name = docker_image.payment_app.name
+# Reference the images that were just built
+data "docker_registry_image" "payment_app" {
+  name = "${aws_ecr_repository.payment_app_repo.repository_url}:latest"
+
+  depends_on = [null_resource.build_and_push_images]
 }
 
-# Build and Push DB Feeder App using Docker provider
-resource "docker_image" "dbfeeder_app" {
+# Reference the DB Feeder image (built by null_resource above)
+data "docker_registry_image" "dbfeeder_app" {
   name = "${aws_ecr_repository.dbfeeder_app_repo.repository_url}:latest"
-  build {
-    context  = "../code/postgresql-data-feeder"
-    platform = "linux/amd64"
-  }
-  triggers = {
-    properties_file = sha256(local_file.db_feeder_properties.content)
-  }
+
   depends_on = [
-    local_file.db_feeder_properties,
+    null_resource.build_and_push_images,
     var.psql_init_container_id  # Ensure DB is initialized first
   ]
-}
-
-resource "docker_registry_image" "dbfeeder_app" {
-  name = docker_image.dbfeeder_app.name
 }
 
 # ------------------------------------------------------
@@ -377,7 +376,7 @@ resource "aws_ecs_service" "payment_app_service" {
   }
 
   depends_on = [
-    docker_registry_image.payment_app,
+    data.docker_registry_image.payment_app,
     confluent_kafka_topic.error-payments-topic,
     confluent_kafka_topic.payments-topic,
     confluent_schema.avro-payments
@@ -399,7 +398,7 @@ resource "aws_ecs_service" "dbfeeder_app_service" {
   }
 
   depends_on = [
-    docker_registry_image.dbfeeder_app,
+    data.docker_registry_image.dbfeeder_app,
     var.psql_init_container_id
   ]
 }
